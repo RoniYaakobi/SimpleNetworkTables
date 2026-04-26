@@ -1,24 +1,29 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.basic_commands import Command
+from client.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
 from client.pages.login import LoginPage
+from client.pages.controller_interface import ControllerInterface
 
 import threading
 
 
 class ConnectCommand(Command):
-    def __init__(self, controller, encryption_type, *args, **kwargs):
-        super().__init__(controller, *args, **kwargs)
+    """ Connect to the server, starting the secure session. """
+    def __init__(self, controller : ControllerInterface, encryption_type : ProtocolConstants.EncryptionType):
+        """
+        Args:
+            controller (ControllerInterface): The controller which schedules the command.
+            encryption_type (EncryptionType): The type of secure session chosen to connect to the server with.
+        """
+        super().__init__(controller)
         self.encryption_type = encryption_type
         self.already_connecting = False
         self.connect_thread = None
-        self._initialize = self.initialize
-        self._is_finished = self.is_finished
-        self._end = self.end
+
 
     def initialize(self):
         self.already_connecting = self.controller.backend().is_connecting()

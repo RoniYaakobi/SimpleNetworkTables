@@ -1,30 +1,41 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.basic_commands import Command
+from client.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
 from client.pages.verify_account import VerifyPage
+from client.pages.controller_interface import ControllerInterface
 
 
 class RegisterCommand(Command):
-    def __init__(self, controller, username, email, password, confirm, *args, **kwargs):
-        super().__init__(controller, *args, **kwargs)
+    """
+    Start the first stage of Registering the new user, sending the username, password, and the email for the two factor auth.
+    Also a confirmation password in order to make sure that the user confirmed the password
+    """
+    def __init__(self, controller: ControllerInterface, username: str, email: str, password: str, confirmation_password: str):
+        """
+        Args:
+            controller (ControllerInterface): object that triggered this command.
+            username (str): the username string.
+            email (str): the user's email in a string.
+            passowrd (str): the username's password in a string
+            confirmation_password (str): Confirmation for the password.
+                User must input the exact same string in password and here in order to be considered confirmed
+        """
+        super().__init__(controller)
         self.username = username
         self.email = email
         self.password = password
-        self.confirm = confirm
+        self.confirmation_password = confirmation_password
         self.username_taken = False
         self.email_taken = False
         self.passwords_matching = False
-        self.connected = False
-        self._initialize = self.initialize
-        self._is_finished = self.is_finished
-        self._end = self.end
+        self.connection_alive = False
 
     def initialize(self):
-        self.passwords_matching = self.password == self.confirm
+        self.passwords_matching = self.password == self.confirmation_password
 
         if not self.passwords_matching:
             self.cancel()
@@ -34,8 +45,8 @@ class RegisterCommand(Command):
         self.controller.backend().set_email(self.email)
         self.controller.backend().set_password(self.password)
 
-        self.connected = self.controller.backend().register()
-        if not self.connected:
+        self.connection_alive = self.controller.backend().register()
+        if not self.connection_alive:
             self.cancel()
             return
 

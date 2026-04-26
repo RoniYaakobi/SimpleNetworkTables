@@ -1,29 +1,36 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.basic_commands import Command
+from client.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
+
+from client.pages.controller_interface import ControllerInterface
 
 
 
 class LoginCommand(Command):
-    def __init__(self, controller, username, password, *args, **kwargs):
-        super().__init__(controller, *args, **kwargs)
+    """ Run to login to the server when the user supplies a username and a password. """
+    def __init__(self, controller: ControllerInterface, username: str, password: str):
+        """
+        Args:
+            controller (ControllerInterface): Object which triggers this command.
+            username (str): the username string
+            password (str): the password string
+            
+        """
+        super().__init__(controller)
         self.username = username
         self.password = password
-        self.connected = False
+        self.connection_alive = False
         self.has_errors = False
-        self._initialize = self.initialize
-        self._is_finished = self.is_finished
-        self._end = self.end
 
     def initialize(self):
         self.controller.backend().set_username(self.username)
         self.controller.backend().set_password(self.password)
-        self.connected = self.controller.backend().login()
+        self.connection_alive = self.controller.backend().login()
 
-        if not self.connected:
+        if not self.connection_alive:
             self.cancel()
             return
 

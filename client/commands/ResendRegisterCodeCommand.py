@@ -1,25 +1,27 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.basic_commands import Command
+from client.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.pages.login import LoginPage
+from client.pages.controller_interface import ControllerInterface
 
 
-class ResendCommand(Command):
-    def __init__(self, controller, *args, **kwargs):
-        super().__init__(controller, *args, **kwargs)
+class ResendRegisterCodeCommand(Command):
+    """ Resend the register code to the email"""
+    def __init__(self, controller: ControllerInterface):
+        """
+        Args:
+            controller (ControllerInterface): object that triggers this command
+        """
+        super().__init__(controller)
         self.already_valid = False
         self.wrong_username = False
-        self._initialize = self.initialize
-        self._is_finished = self.is_finished
-        self._end = self.end
 
     def initialize(self):
-        self.connected = self.controller.backend().reset_code()
-        if not self.connected:
+        self.connection_alive = self.controller.backend().reset_code()
+        if not self.connection_alive:
             self.cancel()
             return
 

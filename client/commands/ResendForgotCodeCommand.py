@@ -1,22 +1,25 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.basic_commands import Command
+from client.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
+from client.pages.controller_interface import ControllerInterface
 
-class ResendForgotCommand(Command):
-    def __init__(self, controller, *args, **kwargs):
-        super().__init__(controller, *args, **kwargs)
+class ResendForgotCodeCommand(Command):
+    """ Resend the code for the forgot password. """
+    def __init__(self, controller: ControllerInterface):
+        """
+        Args:
+            controller (ControllerInterface): the object that triggers this command
+        """
+        super().__init__(controller)
         self.wrong_email = False
-        self._initialize = self.initialize
-        self._is_finished = self.is_finished
-        self._end = self.end
 
     def initialize(self):
-        self.connected = self.controller.backend().reset_code(email=True)
-        if not self.connected:
+        self.connection_alive = self.controller.backend().reset_code(email=True)
+        if not self.connection_alive:
             self.cancel()
             return
 

@@ -1,28 +1,32 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.basic_commands import Command
+from client.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
 from client.pages.reset_password import ResetPasswordPage
+from client.pages.controller_interface import ControllerInterface
 
 
-class VerifyForgotCommand(Command):
-    def __init__(self, controller, code, *args, **kwargs):
-        super().__init__(controller, *args, **kwargs)
+class VerifyForgotCodeCommand(Command):
+    """ Verify the code in the forgot password feature """
+    def __init__(self, controller: ControllerInterface, code: str):
+        """
+        Args:
+            controller (ControllerInterface): The object that triggers this command
+            code (str): the code the user entered to verify they have access to their email
+        """
+        super().__init__(controller)
         self.code = code
         self.wrong_email = False
         self.wrong_code = False
-        self._initialize = self.initialize
-        self._is_finished = self.is_finished
-        self._end = self.end
 
     def initialize(self):
         self.controller.backend().set_code(self.code)
 
-        self.connected = self.controller.backend().verify_for_reset()
-        if not self.connected:
+        self.connection_alive = self.controller.backend().verify_for_reset()
+        if not self.connection_alive:
             self.cancel()
             return
 
