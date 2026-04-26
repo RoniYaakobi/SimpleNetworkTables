@@ -8,5 +8,3 @@ from .verify_forgot import ForgotCodePage
 
 
 ALL_PAGES = [SettingsPage, ForgotCodePage, ForgotPage, LoginPage,ResetPasswordPage, SignUpPage, VerifyPage]
-
-from .GUI import App
