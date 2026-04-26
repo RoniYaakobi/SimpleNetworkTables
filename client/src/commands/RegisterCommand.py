@@ -1,12 +1,12 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.Command import Command
+from client.lib.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.pages.verify_account import VerifyPage
-from client.pages.controller_interface import ControllerInterface
+from client.src.pages.verify_account import VerifyPage
+from client.lib.pages.controller_interface import ControllerInterface
 
 
 class RegisterCommand(Command):

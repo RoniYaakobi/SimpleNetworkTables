@@ -1,9 +1,9 @@
 __author__ = "RONI YAAKOBI"
-from client.pages.page import Page, PageType
+from client.lib.pages.page import Page, PageType
 from tkinter import messagebox
 
-from client.commands.verify_command import VerifyCommand
-from client.commands.resend_command import ResendCommand
+from client.src.commands.VerifySignupCodeCommand import VerifySignupCodeCommand
+from client.src.commands.ResendRegisterCodeCommand import ResendRegisterCodeCommand
 
 
 class VerifyPage(Page):
@@ -24,8 +24,8 @@ class VerifyPage(Page):
     def verification_action(self):
         code = self.verification_code.get()
 
-        self.scheduler().schedule(VerifyCommand(self, code))
+        self.scheduler().schedule(VerifySignupCodeCommand(self, code))
 
     def resend_code_action(self):
 
-        self.scheduler().schedule(ResendCommand(self))
+        self.scheduler().schedule(ResendRegisterCodeCommand(self))

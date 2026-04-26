@@ -1,9 +1,9 @@
 __author__ = "RONI YAAKOBI"
-from client.pages.page import Page, PageType
+from client.lib.pages.page import Page, PageType
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.commands.connect_to_server_command import ConnectCommand
+from client.src.commands.ConnectServerCommand import ConnectCommand
 
 class SettingsPage(Page):
     PAGE_ID = PageType.assign_id("settings")

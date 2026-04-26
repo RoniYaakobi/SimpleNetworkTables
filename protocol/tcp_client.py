@@ -4,7 +4,7 @@ from protocol.protocol_constants import ProtocolConstants
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from protocol.tcp_socket import TcpSocket
-from client.backend_constants import BackendConstants
+from client.src.backend_constants import BackendConstants
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 

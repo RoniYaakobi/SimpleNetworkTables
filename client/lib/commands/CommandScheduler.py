@@ -1,4 +1,4 @@
-from client.commands.Command import Command
+from client.lib.commands.Command import Command
 from tkinter import Tk
 
 import threading

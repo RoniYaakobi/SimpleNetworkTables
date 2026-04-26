@@ -1,9 +1,9 @@
 __author__ = "RONI YAAKOBI"
 import tkinter as tk
 from tkinter import messagebox
-from client.commands.basic_commands import Command
+from client.lib.commands.Command import Command
 
-from client.pages.controller_interface import ControllerInterface
+from client.lib.pages.controller_interface import ControllerInterface
 
 
 class PageType:

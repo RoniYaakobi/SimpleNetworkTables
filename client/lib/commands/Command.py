@@ -89,8 +89,3 @@ class Command:
             bool: whether or not the command is currently running.
         """
         return self._is_active
-        
-
-
-
-    

@@ -1,8 +1,8 @@
 __author__ = "RONI YAAKOBI"
-from client.pages.page import Page, PageType
+from client.lib.pages.page import Page, PageType
 from tkinter import messagebox
 
-from client.commands.register_command import RegisterCommand
+from client.src.commands.RegisterCommand import RegisterCommand
 
 
 class SignUpPage(Page):

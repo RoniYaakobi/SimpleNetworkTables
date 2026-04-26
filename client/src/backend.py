@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from protocol.tcp_client import TcpClient
 from protocol.protocol_constants import ProtocolConstants
-from client.backend_constants import BackendConstants
+from client.src.backend_constants import BackendConstants
 
 @dataclass 
 class Message:

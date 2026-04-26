@@ -1,2 +1,2 @@
-py -m client.GUI
+py -m client.src.main
 pause

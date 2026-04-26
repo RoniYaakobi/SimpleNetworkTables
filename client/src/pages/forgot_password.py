@@ -1,8 +1,8 @@
 __author__ = "RONI YAAKOBI"
-from client.pages.page import Page, PageType
+from client.lib.pages.page import Page, PageType
 
 
-from client.commands.forgot_password_command import ForgotPasswordCommand
+from client.src.commands.ForgotCommand import ForgotPasswordCommand
 
 
 class ForgotPage(Page):

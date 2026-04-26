@@ -1,8 +1,8 @@
 __author__ = "RONI YAAKOBI"
-from client.pages.page import Page, PageType
+from client.lib.pages.page import Page, PageType
 
-from client.commands.verify_forgot_command import VerifyForgotCommand
-from client.commands.resend_command_forgot import ResendForgotCommand
+from client.src.commands.VerifyForgotCodeCommand import VerifyForgotCodeCommand
+from client.src.commands.ResendForgotCodeCommand import ResendForgotCodeCommand
 
 
 class ForgotCodePage(Page):
@@ -23,8 +23,8 @@ class ForgotCodePage(Page):
     def verification_action(self):
         code = self.verification_code.get()
 
-        self.scheduler().schedule(VerifyForgotCommand(self, code))
+        self.scheduler().schedule(VerifyForgotCodeCommand(self, code))
 
     def resend_code_action(self):
 
-        self.scheduler().schedule(ResendForgotCommand(self))
+        self.scheduler().schedule(ResendForgotCodeCommand(self))

@@ -1,8 +1,8 @@
 __author__ = "RONI YAAKOBI"
 import tkinter as tk
 
-from client.backend import AppBackend
-from client.commands.basic_commands import CommandScheduler
+from client.src.backend import AppBackend
+from client.lib.commands.CommandScheduler import CommandScheduler
 
 
 class ControllerInterface:

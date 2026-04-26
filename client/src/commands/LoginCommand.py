@@ -1,11 +1,11 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.Command import Command
+from client.lib.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.pages.controller_interface import ControllerInterface
+from client.lib.pages.controller_interface import ControllerInterface
 
 
 

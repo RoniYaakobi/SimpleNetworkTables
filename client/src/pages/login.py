@@ -1,7 +1,7 @@
 __author__ = "RONI YAAKOBI"
-from client.pages.page import Page, PageType
+from client.lib.pages.page import Page, PageType
 
-from client.commands.login_command import LoginCommand
+from client.src.commands.LoginCommand import LoginCommand
 
 
 class LoginPage(Page):
