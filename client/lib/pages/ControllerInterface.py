@@ -1,15 +1,20 @@
 __author__ = "RONI YAAKOBI"
 import tkinter as tk
+from typing import Any
 
 from client.src.backend import AppBackend
 from client.lib.commands.CommandScheduler import CommandScheduler
 
 
 class ControllerInterface:
-    pass
-
-class ControllerInterface:
-    def __init__(self, backend, scheduler, controller: None | ControllerInterface = None):
+    """ A class that acts as an interface for all objects that can trigger a command, or can send you to a page which can """
+    def __init__(self, backend: Any, scheduler: CommandScheduler, controller: None | "ControllerInterface" = None):
+        """
+        Args:
+            backend (Any): the backend for the application. Use this to communicate between the frontend and the backend
+            scheduler (CommandScheduler): The command scheduler that this controller is using to schedule commands.
+            controller (None | ControllerInterface, optional): _description_. Defaults to None.
+        """
         self.m_backend = backend
         self.m_scheduler = scheduler
         self.m_links = dict()

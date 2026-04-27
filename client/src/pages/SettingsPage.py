@@ -1,5 +1,5 @@
 __author__ = "RONI YAAKOBI"
-from client.lib.pages.page import Page, PageType
+from client.lib.pages import Page, PageType
 
 from protocol.protocol_constants import ProtocolConstants
 

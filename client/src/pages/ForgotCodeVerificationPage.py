@@ -1,11 +1,11 @@
 __author__ = "RONI YAAKOBI"
-from client.lib.pages.page import Page, PageType
+from client.lib.pages import Page, PageType
 
 from client.src.commands.VerifyForgotCodeCommand import VerifyForgotCodeCommand
 from client.src.commands.ResendForgotCodeCommand import ResendForgotCodeCommand
 
 
-class ForgotCodePage(Page):
+class ForgotCodeVerificationPage(Page):
     PAGE_ID = PageType.assign_id("verify forgot")
     def __init__(self, parent, controller):
         super().__init__(parent, controller)

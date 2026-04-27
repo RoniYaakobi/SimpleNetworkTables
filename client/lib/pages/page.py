@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 from client.lib.commands.Command import Command
 
-from client.lib.pages.controller_interface import ControllerInterface
+from client.lib.pages.ControllerInterface import ControllerInterface
 
 
 class PageType:

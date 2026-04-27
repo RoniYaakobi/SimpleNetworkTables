@@ -1,12 +1,12 @@
 __author__ = "RONI YAAKOBI"
-from client.lib.pages.page import Page, PageType
+from client.lib.pages import Page, PageType
 from tkinter import messagebox
 
 from client.src.commands.VerifySignupCodeCommand import VerifySignupCodeCommand
 from client.src.commands.ResendRegisterCodeCommand import ResendRegisterCodeCommand
 
 
-class VerifyPage(Page):
+class VerifyAccountPage(Page):
     PAGE_ID = PageType.assign_id("verify")
     def __init__(self, parent, controller):
         super().__init__(parent, controller)

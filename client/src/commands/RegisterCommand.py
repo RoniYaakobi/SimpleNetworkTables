@@ -5,8 +5,8 @@ from client.lib.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.src.pages.verify_account import VerifyPage
-from client.lib.pages.controller_interface import ControllerInterface
+from client.src.pages.VerifyAccountPage import VerifyAccountPage
+from client.lib.pages.ControllerInterface import ControllerInterface
 
 
 class RegisterCommand(Command):
@@ -68,7 +68,7 @@ class RegisterCommand(Command):
         if not interrupted:
             messagebox.showinfo("Register", f"Sent code to {self.email}, enter it to finish registration")
             
-            self.controller.goto(VerifyPage.PAGE_ID)
+            self.controller.goto(VerifyAccountPage.PAGE_ID)
         elif self.username_taken:
             messagebox.showerror("Register", f"Username {self.username} was taken")
         elif self.email_taken:

@@ -5,8 +5,8 @@ from client.lib.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.src.pages.reset_password import ResetPasswordPage
-from client.lib.pages.controller_interface import ControllerInterface
+from client.src.pages.ResetPasswordPage import ResetPasswordPage
+from client.lib.pages.ControllerInterface import ControllerInterface
 
 
 class VerifyForgotCodeCommand(Command):

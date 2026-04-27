@@ -5,9 +5,9 @@ from client.lib.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.src.pages.verify_forgot import ForgotCodePage
+from client.src.pages.ForgotCodeVerificationPage import ForgotCodeVerificationPage
 
-from client.lib.pages.controller_interface import ControllerInterface
+from client.lib.pages.ControllerInterface import ControllerInterface
 
 
 class ForgotPasswordCommand(Command):
@@ -47,7 +47,7 @@ class ForgotPasswordCommand(Command):
         if not interrupted:
             messagebox.showinfo("Forgot", f"Sent code to {self.email}, enter it to reset password")
 
-            self.controller.goto(ForgotCodePage.PAGE_ID)
+            self.controller.goto(ForgotCodeVerificationPage.PAGE_ID)
         elif self.invalid_email:
             messagebox.showerror("Forgot", f"Email {self.email} is not an account!")
         else:

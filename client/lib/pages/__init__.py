@@ -1,2 +1,2 @@
-from .controller_interface import ControllerInterface
-from .page import Page, PageType
+from .ControllerInterface import ControllerInterface
+from .Page import Page, PageType

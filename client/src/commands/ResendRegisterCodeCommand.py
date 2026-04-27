@@ -5,7 +5,7 @@ from client.lib.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.lib.pages.controller_interface import ControllerInterface
+from client.lib.pages.ControllerInterface import ControllerInterface
 
 
 class ResendRegisterCodeCommand(Command):

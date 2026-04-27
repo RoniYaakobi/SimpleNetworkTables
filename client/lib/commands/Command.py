@@ -2,7 +2,7 @@ __author__ = "RONI YAAKOBI"
 from typing import Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from client.pages.controller_interface import ControllerInterface
+    from ..pages.ControllerInterface import ControllerInterface
 
 
 class Command:
