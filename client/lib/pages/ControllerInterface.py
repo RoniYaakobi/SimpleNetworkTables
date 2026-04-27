@@ -2,7 +2,7 @@ __author__ = "RONI YAAKOBI"
 import tkinter as tk
 from typing import Any
 
-from client.src.backend import AppBackend
+from client.src.Backend import AppBackend
 from client.lib.commands.CommandScheduler import CommandScheduler
 
 
