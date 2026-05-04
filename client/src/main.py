@@ -1,3 +1,4 @@
+__author__ = "RONI YAAKOBI"
 
 from client.src.pages.App import App
 from client.src.pages import ALL_PAGES

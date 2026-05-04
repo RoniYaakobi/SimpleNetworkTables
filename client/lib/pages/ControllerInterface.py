@@ -1,6 +1,5 @@
 from __future__ import annotations
 __author__ = "RONI YAAKOBI"
-
 import tkinter as tk
 from typing import Any,Type
 
