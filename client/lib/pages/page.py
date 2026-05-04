@@ -8,7 +8,6 @@ from .ControllerInterface import ControllerInterface
 
 from typing import Callable, Any
 
-
 class PageType:
     """Stores the page names to id maps
     """
@@ -148,10 +147,10 @@ class Page(tk.Frame, ControllerInterface):
         
         tk.Button(self, text= text, command= command).pack(pady=pack_pady)
 
-    def add_link(self, page_type: type , text: str = "Go to a page", pack_pady=0):
+    def add_link(self, page_type: type[Page] , text: str = "Go to a page", pack_pady=0):
         """ Add a link to the page
         Args:
-            page_type (Page): The page class that we want to link to.
+            page_type (type[Page]): The page type that we want to link to.
             text (str, optional): The link text. Defaults to "Go to a page".
             pack_pady (int, optional): Vertical padding of the link in the page. Defaults to 0.
         """
@@ -160,14 +159,22 @@ class Page(tk.Frame, ControllerInterface):
                                    command= lambda: self.goto(page_type), pack_pady=pack_pady)
         
 
-    def set_link(self, page_type: type, page):
+    def set_link(self, page_type: type[Page], page: Page):
+        """Link the Page class to it's singleton
+
+        Args:
+            page_type (type[Page]): The page type that needs to have it's singleton assigned
+            page (Page): The page singleton
+        """
         self.m_links[page_type] = page
     
-    def get_links(self):
+    def get_links(self) -> dict[type[Page],Page]:
+        """
+        Returns:
+            dict[type[Page],Page]: Every Page class to it's respective singleton instance.
+        """
         return self.m_links
-    
 
-    
 
 
    

@@ -1,17 +1,24 @@
 __author__ = "RONI YAAKOBI"
 import tkinter as tk
 
-
 from client.src.Backend import AppBackend
 from client.lib.commands import CommandScheduler
 from client.src.pages.GUI_constants import GUIConstants
+from client.lib.pages import Page
 
 from client.lib.pages.ControllerInterface import ControllerInterface
 
 
 
 class App(tk.Tk, ControllerInterface):
-    def __init__(self, ALL_PAGES):
+    def __init__(self, ALL_PAGES: list[type[Page]]):
+        """
+        Args:
+            ALL_PAGES (list[type[Page]]): A list of all the pages in the app
+        """
+
+
+        # Python doesn't support interfaces, so womp womp
         tk.Tk.__init__(self)
         ControllerInterface.__init__(self, AppBackend(), CommandScheduler(self, GUIConstants.SCHEDULER_MS))
 
@@ -26,12 +33,14 @@ class App(tk.Tk, ControllerInterface):
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
+        # Instantiate all pages in the list and assign them to the App's links
         for PageClass in ALL_PAGES:
             page = PageClass(container, self)
             self.m_links[PageClass.PAGE_ID] = page
 
             page.grid(row=0, column=0, sticky="nsew")
 
+        # Configure the page links graph
         for page in self.m_links.values():
             for page_id in page.get_links().keys():
 
