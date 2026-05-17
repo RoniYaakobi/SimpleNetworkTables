@@ -1,13 +1,19 @@
 __author__ = "RONI YAAKOBI"
-from client.pages.page import Page, PageType
+from client.lib.pages import Page, PageType, ControllerInterface
+from tkinter import Frame
 from tkinter import messagebox
 
-from client.commands.register_command import RegisterCommand
+from client.src.commands.RegisterCommand import RegisterCommand
 
 
 class SignUpPage(Page):
     PAGE_ID = PageType.assign_id("signup")
-    def __init__(self, parent, controller):
+    def __init__(self, parent: Frame, controller: ControllerInterface):
+        """
+        Args:
+            parent (Frame): The Tk Frame which this page is connected to.
+            controller (ControllerInterface): The object which controls this object.
+        """
         super().__init__(parent, controller)
 
         self.set_title(text="Sign Up")
@@ -24,10 +30,11 @@ class SignUpPage(Page):
         self.confirm_password = self.create_field(text="Confirm Password:", hidden= True)
         self.confirm_password.pack(pady=(0,10))
 
-        self.create_action_button("Sign Up", self.signup_action, pack_pady=5)
+        self.create_action_button("Sign Up", self._signup_action, pack_pady=5)
         self.add_link(page_type=PageType.identify("login"), text="Back To Login")
 
-    def signup_action(self):
+    def _signup_action(self):
+        """ Use input username, email, password, and confirmation passwords to attempt to register. """
         username = self.signup_username.get()
         email = self.signup_email.get()
 
