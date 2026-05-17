@@ -1,37 +1,45 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.basic_commands import Command
+from client.lib.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.pages.login import LoginPage
+from client.src.pages.LoginPage import LoginPage
+from client.lib.pages.ControllerInterface import ControllerInterface
 
 
 class ResetPasswordCommand(Command):
-    def __init__(self, controller, password, confirmation, *args, **kwargs):
-        super().__init__(controller, *args, **kwargs)
+    """ Reset the password """
+    def __init__(self, controller: ControllerInterface, email: str, password: str, confirmation_password: str):
+        """
+        Args:
+            controller (ControllerInterface): object that triggers this command.
+            email (str): the email of the account to reset the password for
+            password (str): the new password stored as a string.
+            confirmation_password (str): verification for the new password, must be the same as password.
+        """
+        super().__init__(controller)
+        self.email = email
         self.password = password
-        self.confirm = confirmation
-        self.connected = False
+        self.confirmation_password = confirmation_password
+        self.connection_alive = False
         self.not_same_password = False
         self.bad_code = False
         self.bad_email = False
-        self._initialize = self.initialize
-        self._is_finished = self.is_finished
-        self._end = self.end
 
     def initialize(self):
-        self.not_same_password = self.password != self.password
+        self.not_same_password = self.password != self.confirmation_password
 
         if (self.not_same_password):
             self.cancel()
             return
 
         self.controller.backend().set_password(self.password)
-        self.connected = self.controller.backend().reset_password()
+        self.controller.backend().set_email(self.email)
+        self.connection_alive = self.controller.backend().reset_password()
 
-        if not self.connected:
+        if not self.connection_alive:
             self.cancel()
             return
 

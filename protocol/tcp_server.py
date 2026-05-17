@@ -4,15 +4,28 @@ import struct
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from protocol.tcp_socket import TcpSocket
 from protocol.protocol_constants import ProtocolConstants
-from cryptography.hazmat.primitives.asymmetric import padding,dh 
+from cryptography.hazmat.primitives.asymmetric import padding,dh , rsa
 from cryptography.hazmat.primitives import hashes,serialization
 
 class ClientSocketWrapper:
+    """
+        Acts as a TCPclient interface
+    """
     def __init__(self, sock):
         self.sock = sock
         self.aes_key = None
 
-    def accept_secure(self, rsa_private_key= None, rsa_public_key=None, dh_parameters=None):
+    def accept_secure(self, rsa_private_key: rsa.RSAPrivateKey= None, rsa_public_key: rsa.RSAPublicKey =None, dh_parameters: dh.DHParameters =None) -> bool:
+        """Accepts the secure connection from the client
+
+        Args:
+            rsa_private_key (rsa.RSAPrivateKey, optional): The private key for the rsa. Defaults to None.
+            rsa_public_key (rsa.RSAPublicKey, optional): The public key for rsa. Defaults to None.
+            dh_parameters (dh.DHParameters, optional): The diffle hellman parameters. Defaults to None.
+
+        Returns:
+            bool: whether or not the client has been accepted.
+        """
         choice = self.recv(1)
         self.encryption_type = ProtocolConstants.EncryptionType(struct.unpack("!B", choice)[0])
 
@@ -28,7 +41,16 @@ class ClientSocketWrapper:
                 self.connected = False
                 return False
 
-    def accept_secure_rsa(self, rsa_private_key, rsa_public_key):
+    def accept_secure_rsa(self, rsa_private_key: rsa.RSAPrivateKey, rsa_public_key: rsa.RSAPublicKey) -> bool:
+        """Accept securely with RSA encryption
+
+        Args:
+            rsa_private_key (rsa.RSAPrivateKey): The RSA private key
+            rsa_public_key (rsa.RSAPublicKey): The RSA public key
+
+        Returns:
+            bool: whether or not connection worked
+        """
         client_message = self.raw_recv_by_size()
         if client_message.decode() != ProtocolConstants.ACK:
             self.connected = False
@@ -55,7 +77,15 @@ class ClientSocketWrapper:
         self.connected = True
         return True
     
-    def accept_secure_dh(self, dh_parameters):
+    def accept_secure_dh(self, dh_parameters: dh.DHParameters) -> bool:
+        """Accept securely with Diffie Hellman
+
+        Args:
+            dh_parameters (dh.DHParameters): The diffie hellman parameters
+
+        Returns:
+            bool: whether or not we connected successfully
+        """
         client_message = self.raw_recv_by_size()
         if client_message.decode() != ProtocolConstants.ACK:
             self.connected = False
@@ -97,28 +127,79 @@ class ClientSocketWrapper:
         
         
 
-    def recv(self, num_bytes):
+    def recv(self, num_bytes: int) -> bytes:
+        """
+        Args:
+            num_bytes (int): amount of bytes that we recieve
+
+        Returns:
+            bytes: the bytes recieved
+        """
         return self.sock.recv(num_bytes)
     
-    def send(self, buffer):
+    def send(self, buffer: bytes) -> int:
+        """Send a given buffer.
+
+        Args:
+            buffer (bytes): the buffer we want to send
+
+        Returns:
+            int: how many bytes were sent
+        """
         return self.sock.send(buffer)
 
     def recv_by_size(self, *args, **kwargs):
+        """Waits until received a message as specified by the tcp by size protocol. Returns the bytes of the message.
+
+        Returns:
+            bytes: the message that was recieved
+        """
         return TcpConnection.recv_by_size(self, *args, **kwargs)
 
     def send_with_size(self, *args, **kwargs):
+        """Send bytes with a size header for recv_by_size
+
+        Args:
+            bdata (bytes | str): the data to send to the other socket
+        """
         return TcpConnection.send_with_size(self, *args, **kwargs)
     
     def raw_recv_by_size(self, *args, **kwargs):
+        """recv by size but without encryption
+
+        Returns:
+            bytes: the bytes that have been recieved
+        """
         return TcpConnection.raw_recv_by_size(self, *args, **kwargs)
 
     def raw_send_with_size(self, *args, **kwargs):
+        """sends data with no encryption according to tc[ by size]
+
+        Args:
+            bdata (bytes | str): the raw data that is to be sent
+        """
         return TcpConnection.raw_send_with_size(self, *args, **kwargs)
 
     def build_response(self, *args, **kwargs):
+        """Build a response from a given code and arguments
+
+        Args:
+            code (str): the code for the response
+
+        Returns:
+            str: a response to a client request
+        """
         return TcpConnection.build_response(self, *args, **kwargs)
 
     def deconstruct_request(self, *args, **kwargs):
+        """Deconstruct a client request
+
+        Args:
+            message (str): The message to deconstruct
+
+        Returns:
+            tuple[str,list[str]]: the code and the fields that come with it in a tuple
+        """
         return TcpConnection.deconstruct_request(self, *args, **kwargs)
 
 
@@ -127,10 +208,26 @@ class TcpConnection(TcpSocket):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def build_response(self, code, *args):
+    def build_response(self, code: str, *args: list[str]) -> str:
+        """Build a response from a given code and arguments
+
+        Args:
+            code (str): the code for the response
+
+        Returns:
+            str: a response to a client request
+        """
         return code + TcpSocket.FIELD_DELIMETER.join(args)
     
-    def deconstruct_request(self, message):
+    def deconstruct_request(self, message: bytes) -> tuple[str,list[str]]:
+        """Deconstruct a client request
+
+        Args:
+            message (str): The message to deconstruct
+
+        Returns:
+            tuple[str,list[str]]: the code and the fields that come with it in a tuple
+        """
         code = message[:3].decode()
         fields = message[3:].decode().split(TcpSocket.FIELD_DELIMETER)
         return code, fields
