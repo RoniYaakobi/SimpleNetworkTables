@@ -1,10 +1,10 @@
 from __future__ import annotations
 __author__ = "RONI YAAKOBI"
 import tkinter as tk
-from typing import Any,Type
+from typing import Any
 
 
-from client.lib.commands.CommandScheduler import CommandScheduler
+from ..commands.CommandScheduler import CommandScheduler
 
 class ControllerInterface:
     """ A class that acts as an interface for all objects that can trigger a command, or can send you to a page which can """

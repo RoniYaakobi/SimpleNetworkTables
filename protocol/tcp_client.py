@@ -1,5 +1,6 @@
 __author__ = "RONI YAAKOBI"
 import struct, os
+from typing import Tuple
 from protocol.protocol_constants import ProtocolConstants
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
@@ -10,30 +11,65 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 
 class TcpClient(TcpSocket):
+    """The client variation of tcp socket
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.aes_key = TcpClient.generate_aes_key()
+        self.aes_key = TcpClient.__generate_aes_key()
 
-    def set_addr(self, addr):
+    def set_addr(self, addr: Tuple[str, int]):
+        """Set the address of the socket to
+
+        Args:
+            addr (Tuple[str, int]): the address
+        """
         self.addr = addr
         
-    def build_request(self, code, *args):
-        print(args)
+    def build_request(self, code: str, *args) -> str:
+        """Build the request to the server
+
+        Args:
+            code (str): 
+
+        Returns:
+            str: The request and the fields in one string
+        """
         return code + TcpClient.FIELD_DELIMETER.join(args)
     
 
-    def deconstruct_response(self, message):
+    def deconstruct_response(self, message: str) -> Tuple[str, list[str]]:
+        """ Deconstruct the server response into fields
+
+        Args:
+            message (str): the message that needs to be deconstructed 
+
+        Returns:
+            Tuple[str, list[str]]: What ended up being deconstructed
+        """
         code = message[:3].decode()
         fields = message[3:].decode().split(TcpClient.FIELD_DELIMETER)
         return code, fields
     
-    def validate_server_support(self, encryption_type):
+    def __validate_server_support(self, encryption_type: ProtocolConstants.EncryptionType) -> bool:
+        """Check if the server supports a certain encryption type
+
+        Args:
+            encryption_type (ProtocolConstants.EncryptionType): What encryption type to check
+
+        Returns:
+            bool: whether or not the server actually supports the encryption
+        """
         self.send(struct.pack("!B", encryption_type.value))
         return struct.unpack("!B", self.recv(1))[0] == 1
     
-    def connect_rsa(self):
+    def connect_rsa(self) -> bool:
+        """Secure connect via RSA to the server
+
+        Returns:
+            bool: whether or not the connection happened
+        """
         self.connect(self.addr)
-        server_supports_method = self.validate_server_support(ProtocolConstants.EncryptionType.RSA)
+        server_supports_method = self.__validate_server_support(ProtocolConstants.EncryptionType.RSA)
         if not server_supports_method:
             self.connected = False
             return False
@@ -42,13 +78,16 @@ class TcpClient(TcpSocket):
         public_key_bytes = self.raw_recv_by_size()
         self.server_public_key_rsa = serialization.load_pem_public_key(public_key_bytes)
 
-        self.send_aes_with_rsa()
+        self.__send_aes_with_rsa()
 
-        return self.verify_connection()
+        return self.__verify_connection()
 
 
 
-    def send_aes_with_rsa(self):
+    def __send_aes_with_rsa(self):
+        """
+            Send the AES key ecrypted with rsa
+        """
         aes_key = self.server_public_key_rsa.encrypt(
             self.aes_key,
             padding.OAEP(
@@ -60,9 +99,14 @@ class TcpClient(TcpSocket):
 
         self.raw_send_with_size(aes_key)
 
-    def connect_dh(self):
+    def connect_dh(self) -> bool:
+        """Connect secure with diffie hellman
+
+        Returns:
+            bool: whether or not the connection worked
+        """
         self.connect(self.addr)
-        server_supports_method = self.validate_server_support(ProtocolConstants.EncryptionType.DH)
+        server_supports_method = self.__validate_server_support(ProtocolConstants.EncryptionType.DH)
         if not server_supports_method:
             self.connected = False
             return False
@@ -96,9 +140,14 @@ class TcpClient(TcpSocket):
 
         self.send_with_size(ProtocolConstants.ACK)
 
-        return self.verify_connection()
+        return self.__verify_connection()
 
-    def verify_connection(self):
+    def __verify_connection(self) -> bool:
+        """Verify the secure connection to the server worked
+
+        Returns:
+            bool: whether or not the server connected
+        """
         response = self.recv_by_size()
         if response.decode() == ProtocolConstants.ACK:
             self.connected = True
@@ -109,7 +158,12 @@ class TcpClient(TcpSocket):
             return False
 
     @staticmethod
-    def generate_aes_key():
+    def __generate_aes_key() -> bytes:
+        """Create the aes key for the client
+
+        Returns:
+            _type_: _description_
+        """
         return os.urandom(32)
     
 if __name__ == "__main__":

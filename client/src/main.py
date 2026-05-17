@@ -1,7 +1,7 @@
 __author__ = "RONI YAAKOBI"
 
-from client.src.pages.App import App
-from client.src.pages import ALL_PAGES
+from .pages.App import App
+from .pages import ALL_PAGES
 
 if __name__ == "__main__":
     app = App(ALL_PAGES)

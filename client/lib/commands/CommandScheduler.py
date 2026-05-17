@@ -1,8 +1,8 @@
 __author__ = "RONI YAAKOBI"
-from client.lib.commands.Command import Command
 from tkinter import Tk
-
 import threading
+
+from .Command import Command
 
 class CommandScheduler:
     """

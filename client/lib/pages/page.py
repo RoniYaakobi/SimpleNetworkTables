@@ -1,12 +1,13 @@
 from __future__ import annotations
 __author__ = "RONI YAAKOBI"
-import tkinter as tk
-from tkinter import messagebox
-from client.lib.commands.Command import Command
-
-from .ControllerInterface import ControllerInterface
+from tkinter import messagebox, Frame, Label, Radiobutton, IntVar, Entry, Button
 
 from typing import Callable, Any
+
+from ..commands.Command import Command
+from .ControllerInterface import ControllerInterface
+
+
 
 class PageType:
     """Stores the page names to id maps
@@ -42,14 +43,14 @@ class PageType:
         return PageType.names_to_ids.get(name)
 
 
-class Page(tk.Frame, ControllerInterface):
+class Page(Frame, ControllerInterface):
     """ A generic page with utilities """
 
     PAGE_ID = PageType.assign_id("plain")
 
     def __init__(self, parent, controller):
         """ A weird way to do inheritance in python because python is weird. """
-        tk.Frame.__init__(self, parent)
+        Frame.__init__(self, parent)
         ControllerInterface.__init__(self, controller.backend(), controller.scheduler(), controller= controller)
 
     def show(self):
@@ -64,7 +65,7 @@ class Page(tk.Frame, ControllerInterface):
             text (str, optional): Defaults to "Title".
             font (tuple, optional): (Font style, Font size). Defaults to ("Arial", 20).
         """
-        tk.Label(self, text=text, font=font).pack(pady=10)
+        Label(self, text=text, font=font).pack(pady=10)
 
     def add_radio_choice(self, text="Option", value=0, variable=None):
         """A radio choice for the form
@@ -78,8 +79,8 @@ class Page(tk.Frame, ControllerInterface):
             tk.IntVar: If no varibale is passed, auto initialize a new int variable, and use that for the radio.
         """
         if variable is None:
-            variable = tk.IntVar(value=value)
-        tk.Radiobutton(self, text=text, value=value, variable=variable).pack()
+            variable = IntVar(value=value)
+        Radiobutton(self, text=text, value=value, variable=variable).pack()
 
         return variable
 
@@ -105,8 +106,8 @@ class Page(tk.Frame, ControllerInterface):
         }
 
 
-        tk.Label(self, text=name).pack()
-        text = tk.Label(self,**text_box_style)
+        Label(self, text=name).pack()
+        text = Label(self,**text_box_style)
         text.configure(text=getter())
         
         def update_text():
@@ -130,8 +131,8 @@ class Page(tk.Frame, ControllerInterface):
         Returns:
             tk.Entry: the field to extract the input from.
         """
-        tk.Label(self, text=text).pack()
-        field = tk.Entry(self, show="*") if hidden else tk.Entry(self)
+        Label(self, text=text).pack()
+        field = Entry(self, show="*") if hidden else Entry(self)
         self.m_fields.append(field)
         return field
     
@@ -145,7 +146,7 @@ class Page(tk.Frame, ControllerInterface):
             pack_pady (int, optional): How much vertical padding to give the button. Defaults to 0.
         """
         
-        tk.Button(self, text= text, command= command).pack(pady=pack_pady)
+        Button(self, text= text, command= command).pack(pady=pack_pady)
 
     def add_link(self, page_type: type[Page] , text: str = "Go to a page", pack_pady=0):
         """ Add a link to the page
