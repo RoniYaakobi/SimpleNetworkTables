@@ -1,28 +1,33 @@
 __author__ = "RONI YAAKOBI"
 from tkinter import messagebox
 
-from client.commands.basic_commands import Command
+from client.lib.commands.Command import Command
 
 from protocol.protocol_constants import ProtocolConstants
 
-from client.pages.login import LoginPage
+from client.src.pages.LoginPage import LoginPage
+from client.lib.pages.ControllerInterface import ControllerInterface
 
 
-class VerifyCommand(Command):
-    def __init__(self, controller, code, *args, **kwargs):
-        super().__init__(controller, *args, **kwargs)
-        self.code = code
+class VerifySignupCodeCommand(Command):
+    """Verify the code for signup
+    """
+    def __init__(self, controller: ControllerInterface, verification_code: str):
+        """
+        Args:
+            controller (ControllerInterface): The object which triggers this command
+            verification_code (str): The verification code that the user entered.
+        """
+        super().__init__(controller)
+        self.code = verification_code
         self.invalid_code = False
         self.wrong_username = False
-        self._initialize = self.initialize
-        self._is_finished = self.is_finished
-        self._end = self.end
 
     def initialize(self):
         self.controller.backend().set_code(self.code)
 
-        self.connected = self.controller.backend().verify_account()
-        if not self.connected:
+        self.connection_alive = self.controller.backend().verify_account()
+        if not self.connection_alive:
             self.cancel()
             return
 

@@ -5,6 +5,8 @@ from cryptography.hazmat.primitives import padding
 
 
 class TcpSocket(socket.socket):
+    """A parent of the tcp client and server. holds the functions they have in common
+    """
     SIZE_HEADER_FORMAT = "00000000|"  # n digits for data size + one delimiter
     size_header_size = len(SIZE_HEADER_FORMAT)
     TCP_DEBUG = True
@@ -15,7 +17,12 @@ class TcpSocket(socket.socket):
         super().__init__(*args, **kwargs)
 
 
-    def send_with_size(self, bdata):
+    def send_with_size(self, bdata: bytes | str):
+        """Send bytes with a size header for recv_by_size
+
+        Args:
+            bdata (bytes | str): the data to send to the other socket
+        """
         if type(bdata) != bytes:
             bdata = bdata.encode()
 
@@ -35,7 +42,12 @@ class TcpSocket(socket.socket):
 
         self.raw_send_with_size(msg)
 
-    def recv_by_size(self):
+    def recv_by_size(self) -> bytes:
+        """Waits until received a message as specified by the tcp by size protocol. Returns the bytes of the message.
+
+        Returns:
+            bytes: the message that was recieved
+        """
         raw = self.raw_recv_by_size()
 
         iv, ciphertext = raw[:16], raw[16:]
@@ -52,7 +64,12 @@ class TcpSocket(socket.socket):
 
         return message
 
-    def raw_recv_by_size(self):
+    def raw_recv_by_size(self) -> bytes:
+        """recv by size but without encryption
+
+        Returns:
+            bytes: the bytes that have been recieved
+        """
         size_header = b''
         data_len = 0
         while len(size_header) < TcpSocket.size_header_size:
@@ -79,7 +96,12 @@ class TcpSocket(socket.socket):
         return data
 
 
-    def raw_send_with_size(self, bdata):
+    def raw_send_with_size(self, bdata: bytes | str):
+        """sends data with no encryption according to tc[ by size]
+
+        Args:
+            bdata (bytes | str): the raw data that is to be sent
+        """
         if type(bdata) != bytes:
             bdata = bdata.encode()
         len_data = len(bdata)

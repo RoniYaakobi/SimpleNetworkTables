@@ -8,8 +8,10 @@ from cryptography.hazmat.primitives.asymmetric import rsa, dh
 
 from protocol.tcp_server import TcpConnection, ClientSocketWrapper
 from protocol.protocol_constants import ProtocolConstants
+
+from host.Request import Request
 from host.server_constants import ServerConstants
-from host.database import DataBase
+from host.Database import DataBase
 from host.send_email import send_email
 
 class Server:
@@ -37,6 +39,53 @@ class Server:
 
         DataBase.load()
 
+        self.business_logic_requests = dict()
+
+        self.business_logic_requests[ProtocolConstants.CODES["login"]] = \
+        Request(self.login, ProtocolConstants.CODES["login"], [
+            ProtocolConstants.ERRORS.index("username or password")
+        ])
+
+        self.business_logic_requests[ProtocolConstants.CODES["register"]] = \
+        Request(self.register, ProtocolConstants.CODES["register"], [
+            ProtocolConstants.ERRORS.index("username taken"),
+            ProtocolConstants.ERRORS.index("email taken")
+        ])
+        
+        self.business_logic_requests[ProtocolConstants.CODES["verify"]] = \
+        Request(self.verify, ProtocolConstants.CODES["verify"], [
+            ProtocolConstants.ERRORS.index("username or password"),
+            ProtocolConstants.ERRORS.index("wrong code")
+        ])
+        
+        self.business_logic_requests[ProtocolConstants.CODES["resend"]] = \
+        Request(self.resend_code, ProtocolConstants.CODES["resend"], [
+            ProtocolConstants.ERRORS.index("user already valid"),
+            ProtocolConstants.ERRORS.index("username or password")
+        ])
+
+        self.business_logic_requests[ProtocolConstants.CODES["forgot"]] = \
+        Request(self.forgot, ProtocolConstants.CODES["forgot"], [
+            ProtocolConstants.ERRORS.index("wrong email")
+        ])
+
+        self.business_logic_requests[ProtocolConstants.CODES["verforgot"]] = \
+        Request(self.verify_with_email, ProtocolConstants.CODES["verforgot"], [
+            ProtocolConstants.ERRORS.index("wrong email"),
+            ProtocolConstants.ERRORS.index("wrong code")
+        ])
+
+        self.business_logic_requests[ProtocolConstants.CODES["reset"]] = \
+        Request(self.reset_password, ProtocolConstants.CODES["reset"], [
+            ProtocolConstants.ERRORS.index("wrong email"),
+            ProtocolConstants.ERRORS.index("wrong code")
+        ])
+
+        self.business_logic_requests[ProtocolConstants.CODES["resendmail"]] = \
+        Request(self.resend_code_email, ProtocolConstants.CODES["resendmail"], [
+            ProtocolConstants.ERRORS.index("wrong email")
+        ])
+
         while True:
             client,_ = self.server.accept()
             client = ClientSocketWrapper(client)
@@ -45,35 +94,38 @@ class Server:
             thread.start()
             
 
-    def deal_with_async_client(self, client):
+    def deal_with_async_client(self, client: ClientSocketWrapper):
+        """Delegates the responsibilities of the client asynchronously 
+
+        Args:
+            client (ClientSocketWrapper): client socket
+        """
         is_connected = client.accept_secure(rsa_private_key=self.RSA_PRIVATE_KEY,
                                              rsa_public_key=self.RSA_PUBLIC_KEY,
                                              dh_parameters=self.DH_PARAMS)
         if not is_connected:
             del self.clients_to_threads[client]
-
-            self.async_messages.delete_socket(client)
         
-        listen_thread = threading.Thread(target=self.listen_to_client, args=(client,))
-        update_thread = threading.Thread(target=self.update_client_messages, args=(client,))
-        business_logic= threading.Thread(target=self.business_logic, args=(client,))
-        self.clients_to_threads[client] += [listen_thread, update_thread, business_logic]
+        listen_thread = threading.Thread(target=self.listen_to_client, args=(client,), daemon= True)
+        business_logic= threading.Thread(target=self.business_logic, args=(client,), daemon= True)
+        self.clients_to_threads[client] += [listen_thread, business_logic]
         listen_thread.start()
-        update_thread.start()
         business_logic.start()
         
         
         listen_thread.join()
-        update_thread.join()
         business_logic.join()
 
         del self.clients_to_threads[client]
 
-    def update_client_messages(self, client):
-        time.sleep(1)
 
 
-    def listen_to_client(self, client):
+    def listen_to_client(self, client: ClientSocketWrapper):
+        """Listens to a client and polls it's requests
+
+        Args:
+            client (ClientSocketWrapper): the client socket
+        """
         while True:
             
             with self.thread_dict_lock:
@@ -96,6 +148,11 @@ class Server:
                     self.sock_to_requests[client] = [msg]
 
     def business_logic(self, client: TcpConnection):
+        """Dispatch the requests to their respective handlers
+
+        Args:
+            client (TcpConnection): the given client to dispatch
+        """
         while True:
             with self.thread_dict_lock:
                 terminate = self.clients_to_threads[client][0]
@@ -112,127 +169,19 @@ class Server:
 
             for request in requests:
                 code, fields = client.deconstruct_request(request)
-                if code == ProtocolConstants.CODES["login"]:
-                    username_taken = self.login(fields, client)
-                    if username_taken:
-                        client.send_with_size(
-                            client.build_response(code)
-                        )
-                    else:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("username or password")))
-                        )
+                self.business_logic_requests[code].respond(client, *fields)
 
 
-                elif code == ProtocolConstants.CODES["register"]:
-                    username_taken, email_taken = self.register(fields)
-                    if not username_taken and not email_taken:
-                        client.send_with_size(
-                            client.build_response(code)
-                        )
-                    elif username_taken:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("username taken")))
-                        )
-                    elif email_taken:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("email taken")))
-                        )
-                elif code == ProtocolConstants.CODES["verify"]:
-                    right_email, correct_code = self.verify(fields)
-                    if right_email and correct_code:
-                        client.send_with_size(
-                            client.build_response(code)
-                        )
-                    elif not correct_code:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("wrong code")))
-                        )
-                    elif not right_email:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("username or password")))
-                        )
+    def register(self, fields: list[str], client: ClientSocketWrapper) -> tuple[bool, bool]:
+        """Register a new user
 
-                elif code == ProtocolConstants.CODES["resend"]:
-                    right_email, user_not_valid = self.resend_code(fields)
-                    if right_email and user_not_valid:
-                        client.send_with_size(
-                            client.build_response(code)
-                        )
-                    elif not user_not_valid:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("user already valid")))
-                        )
-                    elif not right_email :
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("username or password")))
-                        )
+        Args:
+            fields (list[str]): the fields in the request
 
-                elif code == ProtocolConstants.CODES["forgot"]:
-                    right_email = self.forgot(fields)
-                    if right_email:
-                        client.send_with_size(
-                            client.build_response(code)
-                        )
-                    else:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("wrong email")))
-                        )
-                
-                elif code == ProtocolConstants.CODES["verforgot"]:
-                    is_valid_email, is_valid_code = self.verify_with_email(fields)
-                    if is_valid_email and is_valid_code:
-                        client.send_with_size(
-                            client.build_response(code)
-                        )
-                    elif not is_valid_email:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("wrong email")))
-                        )
-                    elif not is_valid_code:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("wrong code")))
-                        )
-                elif code == ProtocolConstants.CODES["reset"]:
-                    is_valid_email, is_valid_code = self.reset_password(fields)
-                    if is_valid_email and is_valid_code:
-                        client.send_with_size(
-                            client.build_response(code)
-                        )
-                    elif not is_valid_email:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("wrong email")))
-                        )
-                    elif not is_valid_code:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("wrong code")))
-                        )
-
-                elif code == ProtocolConstants.CODES["resendmail"]:
-                    right_email = self.resend_code_email(fields)
-                    if right_email:
-                        client.send_with_size(
-                            client.build_response(code)
-                        )
-                    else:
-                        client.send_with_size(
-                            client.build_response(ProtocolConstants.CODES["error"], code, 
-                                                  str(ProtocolConstants.ERRORS.index("wrong email")))
-                        )
-
-    def register(self, fields):
+        Returns:
+            tuple[bool, bool]: if the username already exists, if the email is already used
+        """
+        print(fields)
         username = fields[0]
         password = fields[1]
         email = fields[2]
@@ -248,19 +197,36 @@ class Server:
             
 
 
-    def login(self, fields, client):
+    def login(self, fields: list[str], client: ClientSocketWrapper) -> bool:
+        """Login a new user
+
+        Args:
+            fields (list[str]): request fields
+            client (ClientSocketWrapper): the client in question
+
+        Returns:
+            bool: whether the login failed
+        """
         username = fields[0]
         password = fields[1]
 
         if not (DataBase.IsUserExist(username) and
                  DataBase.IsPasswordOK(username, password) and DataBase.IsVerified(username)):
-            return False 
+            return True 
         
-        self.async_messages.connect_user(client, username)
         client.username = username
-        return True
+        return False
     
-    def resend_code(self, fields):
+    def resend_code(self, fields: list[str], client: ClientSocketWrapper) -> tuple[bool, bool]:
+        """Resend the code to the user
+
+        Args:
+            fields (list[str]): The request's field
+            client (ClientSocketWrapper): The client's socket
+
+        Returns:
+            tuple[bool, bool]: user already exists, user already verified
+        """
         username = fields[0]
 
         if (not DataBase.IsUserExist(username) or DataBase.IsVerified(username)):
@@ -271,32 +237,56 @@ class Server:
 
         if code != -1:
             send_email(email,"Verification code", str(code))
-            return True, True,
+            return False, False,
             
         
         return True, True  
       
-    def verify(self, fields):
+    def verify(self, fields: list[str], client: ClientSocketWrapper) -> tuple[bool, bool]:
+        """Verify the client
+
+        Args:
+            fields (list[str]): request's fields
+            client (ClientSocketWrapper): client socket
+
+        Returns:
+            tuple[bool, bool]: whether or not the password is right, whether the code is right
+        """
         username = fields[0]
         password = fields[1]
         code = fields[2]
 
-        if (DataBase.IsPasswordOK(username,password)):
-            return True, DataBase.ValidateAccount(username, code)
-        
-        return False, True
+        return not DataBase.IsPasswordOK(username,password), not DataBase.ValidateAccount(username, code)
     
-    def forgot(self, fields):
+    def forgot(self, fields: list[str], client: ClientSocketWrapper) -> bool:
+        """Send the reset code to the client
+
+        Args:
+            fields (list[str]): the request's fields
+            client (ClientSocketWrapper): the client's socket
+
+        Returns:
+            bool: is an email invalid
+        """
         email = fields[0]
 
         code = DataBase.ResetCodeByEmail(email)
         if code != -1:
             send_email(email,"Verification code", str(code))
-            return True
+            return False
 
-        return False
+        return True
     
-    def reset_password(self, fields):
+    def reset_password(self, fields: list[str], client: ClientSocketWrapper) -> list[bool, bool]:
+        """Reset the password
+
+        Args:
+            fields (list[str]): the request's fields
+            client (ClientSocketWrapper): the client' socket
+
+        Returns:
+            list[bool, bool]: whether or not the email is valid, and whether or not the code is valid
+        """
         email = fields[0]
         code = fields[1]
         new_password = fields[2]
@@ -304,29 +294,47 @@ class Server:
         is_valid_email = DataBase.IsEmailUsed(email)
 
         if not is_valid_email:
-            return False, True
+            return True, False
         
 
         is_valid_code = DataBase.VerifyCodeForgot(email, code)
         if not is_valid_code:
-            return True, False
+            return False, True
         
         DataBase.ResetPassword(email, new_password)
 
-        return True, True
+        return False, False
              
-    def resend_code_email(self, fields):
+    def resend_code_email(self, fields: list[str], client: ClientSocketWrapper) -> bool:
+        """Resend the code with the email as the key
+
+        Args:
+            fields (list[str]): the request's fields
+            client (ClientSocketWrapper): the client's socket
+
+        Returns:
+            bool: if the database was missing the email
+        """
         email = fields[0]
 
         code = DataBase.ResetCodeByEmail(email)
 
         if code != -1:
             send_email(email,"Verification code", str(code))
-            return True
+            return False
         
-        return False    
+        return True
 
-    def verify_with_email(self, fields):
+    def verify_with_email(self, fields: list[str], client: ClientSocketWrapper) -> tuple[bool, bool]:
+        """Verify if a email exists
+
+        Args:
+            fields (list[str]): request fields
+            client (ClientSocketWrapper): client socket
+
+        Returns:
+            tuple[bool, bool]: email invalid, code invalid
+        """
         email = fields[0]
         code = fields[1]
 
@@ -334,13 +342,14 @@ class Server:
 
         if is_valid_email:
             is_valid_code = DataBase.VerifyCodeForgot(email, code)
-            return is_valid_email, is_valid_code
+            return not is_valid_email, not is_valid_code
         else:
-            return is_valid_email, True       
+            return not is_valid_email, False       
     
     
     @staticmethod
     def generate_keys():
+        """Generate RSA keys"""
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         public_key = private_key.public_key()
 
@@ -363,16 +372,19 @@ class Server:
 
     @staticmethod
     def load_private_key():
+        """Load the private RSA key"""
         with open(ServerConstants.PRIVATE_PATH, "rb") as f:
             return serialization.load_pem_private_key(f.read(), password=None)
 
     @staticmethod
     def load_public_key():
+        """Load the public RSA key"""
         with open(ServerConstants.PUBLIC_PATH, "rb") as f:
             return serialization.load_pem_public_key(f.read())
 
     @staticmethod
     def generate_params_dh():
+        """Generate the Diffie Hellman parameters"""
         dh_params = dh.generate_parameters(generator=2, key_size=2048)
 
 
@@ -387,6 +399,7 @@ class Server:
 
     @staticmethod
     def load_parmeters_dh():
+        """Load the Diffie Hellman parameters"""
         with open(ServerConstants.DH_PATH, "rb") as f:
             return serialization.load_pem_parameters(f.read())
 
