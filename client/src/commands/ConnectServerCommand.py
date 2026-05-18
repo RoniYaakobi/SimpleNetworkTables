@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from client.lib.commands.Command import Command
 
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import EncryptionType
 
 from client.src.pages.LoginPage import LoginPage
 from client.lib.pages.ControllerInterface import ControllerInterface
@@ -13,7 +13,7 @@ import threading
 
 class ConnectCommand(Command):
     """ Connect to the server, starting the secure session. """
-    def __init__(self, controller : ControllerInterface, encryption_type : ProtocolConstants.EncryptionType):
+    def __init__(self, controller : ControllerInterface, encryption_type : EncryptionType):
         """
         Args:
             controller (ControllerInterface): The controller which schedules the command.

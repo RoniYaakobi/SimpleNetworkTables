@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from protocol.tcp_client import TcpClient
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode, EncryptionType
 
 from .BackendConstants import BackendConstants
 
@@ -92,7 +92,7 @@ class AppBackend:
         """ Try opening a secure session with the server. If succeeded, initialize async communication. """
 
         self.connection_status = ConnectionStatus.Connecting
-        if self.encryption_type == ProtocolConstants.EncryptionType.RSA:
+        if self.encryption_type == EncryptionType.RSA:
             self.connection_status = ConnectionStatus.Connected if self.socket.connect_rsa() else ConnectionStatus.Disconnected 
         else:
             self.connection_status = ConnectionStatus.Connected if self.socket.connect_dh() else ConnectionStatus.Disconnected
@@ -108,7 +108,7 @@ class AppBackend:
             bool: Whether or not you managed to send the login request.
         """
         try:
-            self.socket.send_with_size(self.socket.build_request(ProtocolConstants.CODES["login"], self.username, self.password))
+            self.socket.send_with_size(self.socket.build_request(ProtocolCode.LOGIN, self.username, self.password))
             return True
         except Exception as e:
             print(e)
@@ -121,7 +121,7 @@ class AppBackend:
         """
         try:
             self.socket.send_with_size(
-                self.socket.build_request(ProtocolConstants.CODES["register"], self.username, self.password , self.email)
+                self.socket.build_request(ProtocolCode.REGISTER, self.username, self.password , self.email)
             )
             return True
         except Exception as e:
@@ -135,7 +135,7 @@ class AppBackend:
         """
         try:
             self.socket.send_with_size(
-                self.socket.build_request(ProtocolConstants.CODES["forgot"], self.email)
+                self.socket.build_request(ProtocolCode.FORGOT_PASSWORD, self.email)
             )
 
             return True
@@ -150,7 +150,7 @@ class AppBackend:
         """
         try:
             self.socket.send_with_size(
-                self.socket.build_request(ProtocolConstants.CODES["reset"], self.email, self.code, self.password)
+                self.socket.build_request(ProtocolCode.RESET_PASSWORD, self.email, self.code, self.password)
             )
 
             return True
@@ -165,7 +165,7 @@ class AppBackend:
         """
         try:
             self.socket.send_with_size(
-                self.socket.build_request(ProtocolConstants.CODES["verify"], self.username, self.password, self.code)
+                self.socket.build_request(ProtocolCode.VERIFY_REGISTER, self.username, self.password, self.code)
             )
 
             return True
@@ -180,7 +180,7 @@ class AppBackend:
         """
         try:
             self.socket.send_with_size(
-                self.socket.build_request(ProtocolConstants.CODES["verforgot"], self.email, self.code)
+                self.socket.build_request(ProtocolCode.VERIFY_FORGOT, self.email, self.code)
             )
 
             return True
@@ -191,11 +191,11 @@ class AppBackend:
     def reset_code(self, email=False):
         """
         Returns:
-            bool: Whether or not the request go through
+            bool: Whether or not the request went through
         """
         try:
             self.socket.send_with_size(
-                self.socket.build_request(ProtocolConstants.CODES["resend"], self.username)
+                self.socket.build_request(ProtocolCode.RESEND_CODE, self.username)
             )
 
             return True
@@ -210,7 +210,7 @@ class AppBackend:
         """
         try:
             self.socket.send_with_size(
-                self.socket.build_request(ProtocolConstants.CODES["resendmail"], self.email)
+                self.socket.build_request(ProtocolCode.RESEND_FORGOT_MAIL, self.email)
             )
 
             return True
@@ -226,7 +226,7 @@ class AppBackend:
                 
             with self.lock:
                 self.messages.append(Message(code,fields))
-                if code == ProtocolConstants.CODES["error"]:
+                if code == ProtocolCode.ERROR:
                     self.errors.append(ErrorMessage(fields[0],fields[1:]))
                    
 

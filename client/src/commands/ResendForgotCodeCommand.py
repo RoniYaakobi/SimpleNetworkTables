@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from client.lib.commands.Command import Command
 
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode
 
 from client.lib.pages.ControllerInterface import ControllerInterface
 
@@ -24,7 +24,7 @@ class ResendForgotCodeCommand(Command):
             return
 
     def is_finished(self):
-        messages, errors = self.controller.backend().get_messages_of_type(ProtocolConstants.CODES["resend"])
+        messages, errors = self.controller.backend().get_messages_of_type(ProtocolCode.RESEND_FORGOT_MAIL)
         if len(errors) > 0:
             self.wrong_email = True
             self.cancel()

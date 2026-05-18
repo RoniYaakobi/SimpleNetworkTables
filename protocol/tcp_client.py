@@ -1,7 +1,7 @@
 __author__ = "RONI YAAKOBI"
 import struct, os
 from typing import Tuple
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode, ProtocolError, ACK, EncryptionType
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from protocol.tcp_socket import TcpSocket
@@ -50,11 +50,11 @@ class TcpClient(TcpSocket):
         fields = message[3:].decode().split(TcpClient.FIELD_DELIMETER)
         return code, fields
     
-    def __validate_server_support(self, encryption_type: ProtocolConstants.EncryptionType) -> bool:
+    def __validate_server_support(self, encryption_type: EncryptionType) -> bool:
         """Check if the server supports a certain encryption type
 
         Args:
-            encryption_type (ProtocolConstants.EncryptionType): What encryption type to check
+            encryption_type (EncryptionType): What encryption type to check
 
         Returns:
             bool: whether or not the server actually supports the encryption
@@ -69,12 +69,12 @@ class TcpClient(TcpSocket):
             bool: whether or not the connection happened
         """
         self.connect(self.addr)
-        server_supports_method = self.__validate_server_support(ProtocolConstants.EncryptionType.RSA)
+        server_supports_method = self.__validate_server_support(EncryptionType.RSA)
         if not server_supports_method:
             self.connected = False
             return False
         
-        self.raw_send_with_size(ProtocolConstants.ACK)
+        self.raw_send_with_size(ACK)
         public_key_bytes = self.raw_recv_by_size()
         self.server_public_key_rsa = serialization.load_pem_public_key(public_key_bytes)
 
@@ -106,12 +106,12 @@ class TcpClient(TcpSocket):
             bool: whether or not the connection worked
         """
         self.connect(self.addr)
-        server_supports_method = self.__validate_server_support(ProtocolConstants.EncryptionType.DH)
+        server_supports_method = self.__validate_server_support(EncryptionType.DH)
         if not server_supports_method:
             self.connected = False
             return False
         
-        self.raw_send_with_size(ProtocolConstants.ACK)
+        self.raw_send_with_size(ACK)
         
         params_bytes = self.raw_recv_by_size()
         dh_params = serialization.load_pem_parameters(params_bytes)
@@ -135,10 +135,10 @@ class TcpClient(TcpSocket):
             algorithm=hashes.SHA256(),
             length=32,
             salt=None,
-            info=ProtocolConstants.ACK.encode(),
+            info=ACK.encode(),
         ).derive(shared_secret)
 
-        self.send_with_size(ProtocolConstants.ACK)
+        self.send_with_size(ACK)
 
         return self.__verify_connection()
 
@@ -149,7 +149,7 @@ class TcpClient(TcpSocket):
             bool: whether or not the server connected
         """
         response = self.recv_by_size()
-        if response.decode() == ProtocolConstants.ACK:
+        if response.decode() == ACK:
             self.connected = True
             return True
         else:

@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from client.lib.commands.Command import Command
 
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode, ProtocolError
 
 from client.src.pages.VerifyAccountPage import VerifyAccountPage
 from client.lib.pages.ControllerInterface import ControllerInterface
@@ -51,14 +51,14 @@ class RegisterCommand(Command):
             return
 
     def is_finished(self):
-        messages, errors = self.controller.backend().get_messages_of_type(ProtocolConstants.CODES["register"])
+        messages, errors = self.controller.backend().get_messages_of_type(ProtocolCode.REGISTER)
         if len(errors) > 0:
             for error in errors:
                 self.username_taken = self.username_taken or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "username taken"
+                    ProtocolError(error.fields[0]) is ProtocolError.USERNAME_TAKEN
                 
                 self.email_taken = self.email_taken or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "email taken"
+                    ProtocolError(error.fields[0]) == ProtocolError.EMAIL_TAKEN
             self.cancel()
             return False
         return len(messages) > 0
