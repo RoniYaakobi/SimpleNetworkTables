@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from client.lib.commands.Command import Command
 
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode, ProtocolError
 
 from client.src.pages.LoginPage import LoginPage
 from client.lib.pages.ControllerInterface import ControllerInterface
@@ -32,14 +32,14 @@ class VerifySignupCodeCommand(Command):
             return
 
     def is_finished(self):
-        messages, errors = self.controller.backend().get_messages_of_type(ProtocolConstants.CODES["verify"])
+        messages, errors = self.controller.backend().get_messages_of_type(ProtocolCode.VERIFY_REGISTER)
         if len(errors) > 0:
             for error in errors:
                 self.invalid_code = self.invalid_code or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "wrong code"
+                    ProtocolError(error.fields[0]) == ProtocolError.WRONG_CODE
 
                 self.wrong_username = self.wrong_username or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "username or password"
+                    ProtocolError(error.fields[0]) == ProtocolError.INVALID_AUTH
             self.cancel()
             return False
         return len(messages) > 0

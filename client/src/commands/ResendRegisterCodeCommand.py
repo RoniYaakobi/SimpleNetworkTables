@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from client.lib.commands.Command import Command
 
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode, ProtocolError
 
 from client.lib.pages.ControllerInterface import ControllerInterface
 
@@ -26,14 +26,14 @@ class ResendRegisterCodeCommand(Command):
             return
 
     def is_finished(self):
-        messages, errors = self.controller.backend().get_messages_of_type(ProtocolConstants.CODES["resend"])
+        messages, errors = self.controller.backend().get_messages_of_type(ProtocolCode.RESEND_CODE)
         if len(errors) > 0:
             for error in errors:
                 self.already_valid = self.already_valid or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "user already valid"
+                    ProtocolError(error.fields[0]) == ProtocolError.USER_ALREADY_VALID
 
                 self.wrong_username = self.wrong_username or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "username or password"
+                    ProtocolError(error.fields[0]) == ProtocolError.INVALID_AUTH
             self.cancel()
             return False
         return len(messages) > 0

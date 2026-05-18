@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from client.lib.commands.Command import Command
 
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode, ProtocolError
 
 from client.src.pages.LoginPage import LoginPage
 from client.lib.pages.ControllerInterface import ControllerInterface
@@ -44,15 +44,15 @@ class ResetPasswordCommand(Command):
             return
 
     def is_finished(self):
-        messages, errors = self.controller.backend().get_messages_of_type(ProtocolConstants.CODES["reset"])
+        messages, errors = self.controller.backend().get_messages_of_type(ProtocolCode.Rese)
 
         if len(errors) > 0:
             for error in errors:
                 self.bad_code = self.bad_code or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "wrong code"
+                    ProtocolError(error.fields[0]) == ProtocolError.WRONG_CODE
                 
                 self.bad_email = self.bad_email or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "wrong email"
+                    ProtocolError(error.fields[0]) == ProtocolError.WRONG_EMAIL
             self.cancel()
             return False
 

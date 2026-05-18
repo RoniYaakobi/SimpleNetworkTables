@@ -1,4 +1,4 @@
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode
 from protocol.tcp_server import ClientSocketWrapper
 from typing import Callable
 import logging
@@ -40,9 +40,9 @@ class Request:
             if has_error:
                 client.send_with_size(
                     client.build_response(
-                        ProtocolConstants.CODES["error"],
+                        ProtocolCode.ERROR,
                         self.code,
-                        str(error_message)
+                        str(error_message.value)
                     )
                 )
                 break
