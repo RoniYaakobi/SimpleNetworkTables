@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from client.lib.commands.Command import Command
 
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode
 
 from client.lib.pages.ControllerInterface import ControllerInterface
 
@@ -35,7 +35,7 @@ class LoginCommand(Command):
             return
 
     def is_finished(self):
-        messages, errors = self.controller.backend().get_messages_of_type(ProtocolConstants.CODES["login"])
+        messages, errors = self.controller.backend().get_messages_of_type(ProtocolCode.LOGIN)
 
         if len(errors) > 0:
             self.has_errors = True

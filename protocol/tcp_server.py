@@ -3,7 +3,7 @@ import struct
 
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from protocol.tcp_socket import TcpSocket
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolError, ProtocolCode, ACK, EncryptionType
 from cryptography.hazmat.primitives.asymmetric import padding,dh , rsa
 from cryptography.hazmat.primitives import hashes,serialization
 
@@ -27,13 +27,13 @@ class ClientSocketWrapper:
             bool: whether or not the client has been accepted.
         """
         choice = self.recv(1)
-        self.encryption_type = ProtocolConstants.EncryptionType(struct.unpack("!B", choice)[0])
+        self.encryption_type = EncryptionType(struct.unpack("!B", choice)[0])
 
         match(self.encryption_type):
-            case ProtocolConstants.EncryptionType.RSA:
+            case EncryptionType.RSA:
                 self.send(struct.pack("!B",True))
                 return self.accept_secure_rsa(rsa_private_key, rsa_public_key)
-            case ProtocolConstants.EncryptionType.DH:
+            case EncryptionType.DH:
                 self.send(struct.pack("!B",True))
                 return self.accept_secure_dh(dh_parameters)
             case _:
@@ -52,7 +52,7 @@ class ClientSocketWrapper:
             bool: whether or not connection worked
         """
         client_message = self.raw_recv_by_size()
-        if client_message.decode() != ProtocolConstants.ACK:
+        if client_message.decode() != ACK:
             self.connected = False
             return False
         
@@ -73,7 +73,7 @@ class ClientSocketWrapper:
             )
         )
 
-        self.send_with_size(ProtocolConstants.ACK)
+        self.send_with_size(ACK)
         self.connected = True
         return True
     
@@ -87,7 +87,7 @@ class ClientSocketWrapper:
             bool: whether or not we connected successfully
         """
         client_message = self.raw_recv_by_size()
-        if client_message.decode() != ProtocolConstants.ACK:
+        if client_message.decode() != ACK:
             self.connected = False
             return False
         
@@ -117,11 +117,11 @@ class ClientSocketWrapper:
             algorithm=hashes.SHA256(),
             length=32,
             salt=None,
-            info=ProtocolConstants.ACK.encode(),
+            info=ACK.encode(),
         ).derive(shared_secret)
         
 
-        self.send_with_size(ProtocolConstants.ACK)
+        self.send_with_size(ACK)
         self.connected = True
         return True
         

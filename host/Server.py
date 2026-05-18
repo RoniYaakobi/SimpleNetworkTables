@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, dh
 
 from protocol.tcp_server import TcpConnection, ClientSocketWrapper
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode, ProtocolError, ACK, EncryptionType
 
 from host.Request import Request
 from host.server_constants import ServerConstants
@@ -41,49 +41,49 @@ class Server:
 
         self.business_logic_requests = dict()
 
-        self.business_logic_requests[ProtocolConstants.CODES["login"]] = \
-        Request(self.login, ProtocolConstants.CODES["login"], [
-            ProtocolConstants.ERRORS.index("username or password")
+        self.business_logic_requests[ProtocolCode.LOGIN] = \
+        Request(self.login, ProtocolCode.LOGIN, [
+            ProtocolError.INVALID_AUTH
         ])
 
-        self.business_logic_requests[ProtocolConstants.CODES["register"]] = \
-        Request(self.register, ProtocolConstants.CODES["register"], [
-            ProtocolConstants.ERRORS.index("username taken"),
-            ProtocolConstants.ERRORS.index("email taken")
+        self.business_logic_requests[ProtocolCode.REGISTER] = \
+        Request(self.register, ProtocolCode.REGISTER, [
+            ProtocolError.USERNAME_TAKEN,
+            ProtocolError.EMAIL_TAKEN
         ])
         
-        self.business_logic_requests[ProtocolConstants.CODES["verify"]] = \
-        Request(self.verify, ProtocolConstants.CODES["verify"], [
-            ProtocolConstants.ERRORS.index("username or password"),
-            ProtocolConstants.ERRORS.index("wrong code")
+        self.business_logic_requests[ProtocolCode.VERIFY_REGISTER] = \
+        Request(self.verify, ProtocolCode.VERIFY_REGISTER, [
+            ProtocolError.INVALID_AUTH,
+            ProtocolError.WRONG_CODE
         ])
         
-        self.business_logic_requests[ProtocolConstants.CODES["resend"]] = \
-        Request(self.resend_code, ProtocolConstants.CODES["resend"], [
-            ProtocolConstants.ERRORS.index("user already valid"),
-            ProtocolConstants.ERRORS.index("username or password")
+        self.business_logic_requests[ProtocolCode.RESEND_CODE] = \
+        Request(self.resend_code, ProtocolCode.RESEND_CODE, [
+            ProtocolError.USER_ALREADY_VALID,
+            ProtocolError.INVALID_AUTH
         ])
 
-        self.business_logic_requests[ProtocolConstants.CODES["forgot"]] = \
-        Request(self.forgot, ProtocolConstants.CODES["forgot"], [
-            ProtocolConstants.ERRORS.index("wrong email")
+        self.business_logic_requests[ProtocolCode.FORGOT_PASSWORD] = \
+        Request(self.forgot, ProtocolCode.FORGOT_PASSWORD, [
+            ProtocolError.WRONG_EMAIL
         ])
 
-        self.business_logic_requests[ProtocolConstants.CODES["verforgot"]] = \
-        Request(self.verify_with_email, ProtocolConstants.CODES["verforgot"], [
-            ProtocolConstants.ERRORS.index("wrong email"),
-            ProtocolConstants.ERRORS.index("wrong code")
+        self.business_logic_requests[ProtocolCode.VERIFY_FORGOT] = \
+        Request(self.verify_with_email, ProtocolCode.VERIFY_FORGOT, [
+            ProtocolError.WRONG_EMAIL,
+            ProtocolError.WRONG_CODE
         ])
 
-        self.business_logic_requests[ProtocolConstants.CODES["reset"]] = \
-        Request(self.reset_password, ProtocolConstants.CODES["reset"], [
-            ProtocolConstants.ERRORS.index("wrong email"),
-            ProtocolConstants.ERRORS.index("wrong code")
+        self.business_logic_requests[ProtocolCode.RESET_PASSWORD] = \
+        Request(self.reset_password, ProtocolCode.RESET_PASSWORD, [
+            ProtocolError.WRONG_EMAIL,
+            ProtocolError.WRONG_CODE
         ])
 
-        self.business_logic_requests[ProtocolConstants.CODES["resendmail"]] = \
-        Request(self.resend_code_email, ProtocolConstants.CODES["resendmail"], [
-            ProtocolConstants.ERRORS.index("wrong email")
+        self.business_logic_requests[ProtocolCode.RESEND_FORGOT_MAIL] = \
+        Request(self.resend_code_email, ProtocolCode.RESEND_FORGOT_MAIL, [
+            ProtocolError.WRONG_EMAIL
         ])
 
         while True:

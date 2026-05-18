@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from client.lib.commands.Command import Command
 
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode, ProtocolError
 
 from client.src.pages.ResetPasswordPage import ResetPasswordPage
 from client.lib.pages.ControllerInterface import ControllerInterface
@@ -31,14 +31,14 @@ class VerifyForgotCodeCommand(Command):
             return
 
     def is_finished(self):
-        messages, errors = self.controller.backend().get_messages_of_type(ProtocolConstants.CODES["verforgot"])
+        messages, errors = self.controller.backend().get_messages_of_type(ProtocolCode.VERIFY_FORGOT)
         if len(errors) > 0:
             for error in errors:
                 self.wrong_code = self.wrong_code or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "wrong code"
+                    ProtocolError(error.fields[0]) == ProtocolError.WRONG_CODE
 
                 self.wrong_email = self.wrong_username or\
-                    ProtocolConstants.ERRORS[int(error.fields[0])] == "wrong email"
+                    ProtocolError(error.fields[0]) == ProtocolError.WRONG_EMAIL
             self.cancel()
             return False
         return len(messages) > 0

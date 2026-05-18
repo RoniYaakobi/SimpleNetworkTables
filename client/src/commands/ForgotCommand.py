@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from client.lib.commands.Command import Command
 
-from protocol.protocol_constants import ProtocolConstants
+from protocol.protocol_constants import ProtocolCode
 
 from client.src.pages.ForgotCodeVerificationPage import ForgotCodeVerificationPage
 
@@ -35,7 +35,7 @@ class ForgotPasswordCommand(Command):
             return
 
     def is_finished(self):
-        messages, errors = self.controller.backend().get_messages_of_type(ProtocolConstants.CODES["forgot"])
+        messages, errors = self.controller.backend().get_messages_of_type(ProtocolCode.FORGOT_PASSWORD)
         if len(errors) > 0:
             self.invalid_email = True
             self.cancel()
