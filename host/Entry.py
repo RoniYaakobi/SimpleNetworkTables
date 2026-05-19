@@ -49,6 +49,15 @@ class Entry:
         return child_already_exists
     
     def print_all(self, path=""):
+        """Print all the children and the current node"""
         print(path ,self._type, self._value_bytes)
         for key, child in self._children.items():
             child.print_all(path + "/" + key)
+
+    def get_all_children(self, path= "") -> list[tuple[str, Entry]]:
+        """Get all the children"""
+        family = [(path, self)]
+        for key, child in self._children.items():
+            family.extend(child.get_all_children(path + "/" + key))
+        
+        return family

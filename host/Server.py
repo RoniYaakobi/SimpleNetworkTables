@@ -6,13 +6,17 @@ import time, socket
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, dh
 
+
+from protocol.tcp_socket import TcpSocket
 from protocol.tcp_server import TcpConnection, ClientSocketWrapper
-from protocol.protocol_constants import ProtocolCode, ProtocolError, ACK, EncryptionType
+from protocol.protocol_constants import ProtocolCode, ProtocolError
 
 from host.Request import Request
 from host.server_constants import ServerConstants
 from host.Database import DataBase
 from host.send_email import send_email
+
+from host.NetworkTables import HEAD
 
 class Server:
     def __init__(self):
@@ -28,11 +32,14 @@ class Server:
 
         self.DH_PARAMS = Server.load_parmeters_dh()
 
+        self.NETWORK_TABLES = HEAD
+
         self.server = socket.socket()
         self.server.bind(ServerConstants.ADDR)
         self.server.listen(5)
         self.lock = threading.Lock()
         self.thread_dict_lock = threading.Lock()
+        self.nt_lock = threading.Lock()
         self.sock_to_requests = {}
 
         self.clients_to_threads = {}
@@ -85,6 +92,9 @@ class Server:
         Request(self.resend_code_email, ProtocolCode.RESEND_FORGOT_MAIL, [
             ProtocolError.WRONG_EMAIL
         ])
+
+        self.business_logic_requests[ProtocolCode.SNAPSHOT] = \
+        Request(self.send_snapshot, ProtocolCode.SNAPSHOT, [], server_initiated = True)
 
         while True:
             client,_ = self.server.accept()
@@ -215,6 +225,7 @@ class Server:
             return True 
         
         client.username = username
+        client.authenticate(self.send_snapshot)
         return False
     
     def resend_code(self, fields: list[str], client: ClientSocketWrapper) -> tuple[bool, bool]:
@@ -345,6 +356,23 @@ class Server:
             return not is_valid_email, not is_valid_code
         else:
             return not is_valid_email, False       
+   
+    def send_snapshot(self, client: ClientSocketWrapper):
+        """Send the client a snapshot of all values.
+
+            client (ClientSocketWrapper): the client's socket wrapper
+        """
+        with self.nt_lock:
+            children = self.NETWORK_TABLES.get_all_children()
+
+        args = [] 
+        for child in children:
+            args.extend([child[0].encode(), child[1]])
+        
+        args_str = args.join(TcpSocket.FIELD_DELIMETER.encode())
+
+        client.send_with_size(args_str)
+
     
     
     @staticmethod

@@ -1,5 +1,6 @@
 __author__ = "RONI YAAKOBI"
 import struct
+from typing import Callable
 
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from protocol.tcp_socket import TcpSocket
@@ -14,6 +15,29 @@ class ClientSocketWrapper:
     def __init__(self, sock):
         self.sock = sock
         self.aes_key = None
+        self._username = ""
+        self.authenticated = False
+
+    @property
+    def authenticated(self):
+        return self.authenticated
+
+    def authenticate(self, callback: Callable = lambda : None):
+        """Passed this object to a callback and then authenticated this socket
+
+        Args:
+            callback (Callable, optional): The function to pass this socket to. Defaults to lambda:None.
+        """
+        callback(self)
+        self.authenticated = True
+
+    @property
+    def username(self):
+        return self._username
+
+    @username.setter
+    def username(self, value: str):
+        self._username = value
 
     def accept_secure(self, rsa_private_key: rsa.RSAPrivateKey= None, rsa_public_key: rsa.RSAPublicKey =None, dh_parameters: dh.DHParameters =None) -> bool:
         """Accepts the secure connection from the client
