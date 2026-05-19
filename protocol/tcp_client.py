@@ -34,6 +34,9 @@ class TcpClient(TcpSocket):
         Returns:
             str: The request and the fields in one string
         """
+        if type(code) == ProtocolCode:
+            code = code.value
+
         return code + TcpClient.FIELD_DELIMETER.join(args)
     
 

@@ -31,8 +31,8 @@ class CommandScheduler:
         Args:
             command (Command): The command that needs to be scheduled
         """
-        command.initialize()
         command._is_active = True
+        command.initialize()
 
 
     def _register_command(self, command: Command) -> int:
