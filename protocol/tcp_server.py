@@ -16,11 +16,8 @@ class ClientSocketWrapper:
         self.sock = sock
         self.aes_key = None
         self._username = ""
-        self.authenticated = False
+        self.__authenticated = False
 
-    @property
-    def authenticated(self):
-        return self.authenticated
 
     def authenticate(self, callback: Callable = lambda : None):
         """Passed this object to a callback and then authenticated this socket
@@ -29,7 +26,7 @@ class ClientSocketWrapper:
             callback (Callable, optional): The function to pass this socket to. Defaults to lambda:None.
         """
         callback(self)
-        self.authenticated = True
+        self.__authenticated = True
 
     @property
     def username(self):
@@ -241,6 +238,9 @@ class TcpConnection(TcpSocket):
         Returns:
             str: a response to a client request
         """
+        if type(code) == ProtocolCode:
+            code = code.value
+
         return code + TcpSocket.FIELD_DELIMETER.join(args)
     
     def deconstruct_request(self, message: bytes) -> tuple[str,list[str]]:

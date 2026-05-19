@@ -93,9 +93,6 @@ class Server:
             ProtocolError.WRONG_EMAIL
         ])
 
-        self.business_logic_requests[ProtocolCode.SNAPSHOT] = \
-        Request(self.send_snapshot, ProtocolCode.SNAPSHOT, [], server_initiated = True)
-
         while True:
             client,_ = self.server.accept()
             client = ClientSocketWrapper(client)
@@ -179,7 +176,7 @@ class Server:
 
             for request in requests:
                 code, fields = client.deconstruct_request(request)
-                self.business_logic_requests[code].respond(client, *fields)
+                self.business_logic_requests[ProtocolCode(code)].respond(client, *fields)
 
 
     def register(self, fields: list[str], client: ClientSocketWrapper) -> tuple[bool, bool]:
@@ -367,11 +364,11 @@ class Server:
 
         args = [] 
         for child in children:
-            args.extend([child[0].encode(), child[1]])
+            args.extend([child[0], str(child[1].type.value), str(child[1].value_bytes)])
         
-        args_str = args.join(TcpSocket.FIELD_DELIMETER.encode())
+        args_str = TcpSocket.FIELD_DELIMETER.join(args)
 
-        client.send_with_size(args_str)
+        client.send_with_size(ProtocolCode.SNAPSHOT.value + args_str)
 
     
     
