@@ -169,7 +169,7 @@ class Server:
 
             for request in requests:
                 code, fields = client.deconstruct_request(request)
-                self.business_logic_requests[code].respond(client, *fields)
+                self.business_logic_requests[ProtocolCode(code)].respond(client, *fields)
 
 
     def register(self, fields: list[str], client: ClientSocketWrapper) -> tuple[bool, bool]:
