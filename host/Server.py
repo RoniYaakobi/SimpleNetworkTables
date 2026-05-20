@@ -16,7 +16,8 @@ from host.server_constants import ServerConstants
 from host.Database import DataBase
 from host.send_email import send_email
 
-from host.NetworkTables import HEAD
+from host.NetworkTables import HEAD, add_entry
+from host.Entry import EntryType
 
 class Server:
     def __init__(self):
@@ -93,6 +94,11 @@ class Server:
             ProtocolError.WRONG_EMAIL
         ])
 
+        self.business_logic_requests[ProtocolCode.SUBSCRIBE] = \
+        Request(self.subscribe, ProtocolCode.SUBSCRIBE, [
+            ProtocolError.ALREADY_SUBSCRIBED
+        ])
+
         while True:
             client,_ = self.server.accept()
             client = ClientSocketWrapper(client)
@@ -114,13 +120,16 @@ class Server:
             del self.clients_to_threads[client]
         
         listen_thread = threading.Thread(target=self.listen_to_client, args=(client,), daemon= True)
-        business_logic= threading.Thread(target=self.business_logic, args=(client,), daemon= True)
-        self.clients_to_threads[client] += [listen_thread, business_logic]
+        update_client = threading.Thread(target=self.update_client, args=(client,), daemon= True)
+        business_logic = threading.Thread(target=self.business_logic, args=(client,), daemon= True)
+        self.clients_to_threads[client] += [listen_thread, update_client, business_logic]
         listen_thread.start()
+        update_client.start()
         business_logic.start()
         
         
         listen_thread.join()
+        update_client.join()
         business_logic.join()
 
         del self.clients_to_threads[client]
@@ -154,7 +163,33 @@ class Server:
                 else:
                     self.sock_to_requests[client] = [msg]
 
-    def business_logic(self, client: TcpConnection):
+    def update_client(self, client: ClientSocketWrapper):
+        while True:
+            with self.thread_dict_lock:
+                time.sleep(0.02)
+                terminate = self.clients_to_threads[client][0]
+                if terminate:
+                    break
+            
+            entries = self.NETWORK_TABLES.get_topics_for_client_update(client)
+
+        
+            if len(entries) == 0:
+                continue
+
+
+            args = [] 
+            for entry in entries:
+                args.extend([entry.topic, str(entry.type.value), str(entry.value_bytes)])
+                entry.subscriber_updated(client)
+            
+            args_str = TcpSocket.FIELD_DELIMETER.join(args)
+
+            client.send_with_size(ProtocolCode.UPDATE.value + args_str)
+
+            
+
+    def business_logic(self, client: ClientSocketWrapper):
         """Dispatch the requests to their respective handlers
 
         Args:
@@ -188,7 +223,6 @@ class Server:
         Returns:
             tuple[bool, bool]: if the username already exists, if the email is already used
         """
-        print(fields)
         username = fields[0]
         password = fields[1]
         email = fields[2]
@@ -362,15 +396,36 @@ class Server:
         with self.nt_lock:
             children = self.NETWORK_TABLES.get_all_children()
 
-        args = [] 
-        for child in children:
-            args.extend([child[0], str(child[1].type.value), str(child[1].value_bytes)])
+            args = [] 
+            for child in children:
+                args.extend([child.topic, str(child.type.value), str(child.value_bytes)])
         
         args_str = TcpSocket.FIELD_DELIMETER.join(args)
 
         client.send_with_size(ProtocolCode.SNAPSHOT.value + args_str)
 
     
+
+    def subscribe(self, fields: list[str], client: ClientSocketWrapper) -> bool:
+        """Subscribe the client to a topic
+
+        Args:
+            fields (list[str]): request fields
+            client (ClientSocketWrapper): client socket
+
+        Returns:
+            bool: if the client already is subscribed
+        """
+        with self.nt_lock:
+            entry = self.NETWORK_TABLES.get_child(fields[0])
+
+            if not entry:
+                add_entry(fields[0], EntryType.PLACEHOLDER, (0).to_bytes())
+                entry = self.NETWORK_TABLES.get_child(fields[0])
+
+            already_subscribed = entry.subscribe(client)
+
+        return already_subscribed
     
     @staticmethod
     def generate_keys():

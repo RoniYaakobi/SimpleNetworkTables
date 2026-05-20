@@ -9,7 +9,7 @@ class TcpSocket(socket.socket):
     """
     SIZE_HEADER_FORMAT = "00000000|"  # n digits for data size + one delimiter
     size_header_size = len(SIZE_HEADER_FORMAT)
-    TCP_DEBUG = True
+    TCP_DEBUG = False
     LEN_TO_PRINT = 100
     FIELD_DELIMETER = '``````````````````````````````````````' # well this isn't technically safe, but I am not changing my tcp by size implementation for nothing lol 
 
