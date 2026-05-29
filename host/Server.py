@@ -6,13 +6,18 @@ import time, socket
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, dh
 
+
+from protocol.tcp_socket import TcpSocket
 from protocol.tcp_server import TcpConnection, ClientSocketWrapper
-from protocol.protocol_constants import ProtocolCode, ProtocolError, ACK, EncryptionType
+from protocol.protocol_constants import ProtocolCode, ProtocolError
 
 from host.Request import Request
 from host.server_constants import ServerConstants
 from host.Database import DataBase
 from host.send_email import send_email
+
+from host.NetworkTables import HEAD, add_entry
+from host.Entry import EntryType
 
 class Server:
     def __init__(self):
@@ -28,11 +33,14 @@ class Server:
 
         self.DH_PARAMS = Server.load_parmeters_dh()
 
+        self.NETWORK_TABLES = HEAD
+
         self.server = socket.socket()
         self.server.bind(ServerConstants.ADDR)
         self.server.listen(5)
         self.lock = threading.Lock()
         self.thread_dict_lock = threading.Lock()
+        self.nt_lock = threading.Lock()
         self.sock_to_requests = {}
 
         self.clients_to_threads = {}
@@ -86,6 +94,15 @@ class Server:
             ProtocolError.WRONG_EMAIL
         ])
 
+        self.business_logic_requests[ProtocolCode.SUBSCRIBE] = \
+        Request(self.subscribe, ProtocolCode.SUBSCRIBE, [
+            ProtocolError.ALREADY_SUBSCRIBED
+        ])
+
+        self.business_logic_requests[ProtocolCode.PUBLISH] = \
+        Request(self.publish, ProtocolCode.PUBLISH, [
+        ])
+
         while True:
             client,_ = self.server.accept()
             client = ClientSocketWrapper(client)
@@ -107,13 +124,16 @@ class Server:
             del self.clients_to_threads[client]
         
         listen_thread = threading.Thread(target=self.listen_to_client, args=(client,), daemon= True)
-        business_logic= threading.Thread(target=self.business_logic, args=(client,), daemon= True)
-        self.clients_to_threads[client] += [listen_thread, business_logic]
+        update_client = threading.Thread(target=self.update_client, args=(client,), daemon= True)
+        business_logic = threading.Thread(target=self.business_logic, args=(client,), daemon= True)
+        self.clients_to_threads[client] += [listen_thread, update_client, business_logic]
         listen_thread.start()
+        update_client.start()
         business_logic.start()
         
         
         listen_thread.join()
+        update_client.join()
         business_logic.join()
 
         del self.clients_to_threads[client]
@@ -147,7 +167,33 @@ class Server:
                 else:
                     self.sock_to_requests[client] = [msg]
 
-    def business_logic(self, client: TcpConnection):
+    def update_client(self, client: ClientSocketWrapper):
+        while True:
+            with self.thread_dict_lock:
+                time.sleep(0.02)
+                terminate = self.clients_to_threads[client][0]
+                if terminate:
+                    break
+            
+            entries = self.NETWORK_TABLES.get_topics_for_client_update(client)
+
+        
+            if len(entries) == 0:
+                continue
+
+
+            args = [] 
+            for entry in entries:
+                args.extend([entry.topic, str(entry.type.value), str(entry.value_bytes)])
+                entry.subscriber_updated(client)
+            
+            args_str = TcpSocket.FIELD_DELIMETER.join(args)
+
+            client.send_with_size(ProtocolCode.UPDATE.value + args_str)
+
+            
+
+    def business_logic(self, client: ClientSocketWrapper):
         """Dispatch the requests to their respective handlers
 
         Args:
@@ -181,7 +227,6 @@ class Server:
         Returns:
             tuple[bool, bool]: if the username already exists, if the email is already used
         """
-        print(fields)
         username = fields[0]
         password = fields[1]
         email = fields[2]
@@ -215,6 +260,7 @@ class Server:
             return True 
         
         client.username = username
+        client.authenticate(self.send_snapshot)
         return False
     
     def resend_code(self, fields: list[str], client: ClientSocketWrapper) -> tuple[bool, bool]:
@@ -345,8 +391,65 @@ class Server:
             return not is_valid_email, not is_valid_code
         else:
             return not is_valid_email, False       
+   
+    def send_snapshot(self, client: ClientSocketWrapper):
+        """Send the client a snapshot of all values.
+
+            client (ClientSocketWrapper): the client's socket wrapper
+        """
+        with self.nt_lock:
+            children = self.NETWORK_TABLES.get_all_children()
+
+            args = [] 
+            for child in children:
+                args.extend([child.topic, str(child.type.value), str(child.value_bytes)])
+        
+        args_str = TcpSocket.FIELD_DELIMETER.join(args)
+
+        client.send_with_size(ProtocolCode.SNAPSHOT.value + args_str)
+
     
+
+    def subscribe(self, fields: list[str], client: ClientSocketWrapper) -> bool:
+        """Subscribe the client to a topic
+
+        Args:
+            fields (list[str]): request fields
+            client (ClientSocketWrapper): client socket
+
+        Returns:
+            bool: if the client already is subscribed
+        """
+        with self.nt_lock:
+            entry = self.NETWORK_TABLES.get_child(fields[0])
+
+            if not entry:
+                add_entry(fields[0], EntryType.PLACEHOLDER, (0).to_bytes())
+                entry = self.NETWORK_TABLES.get_child(fields[0])
+
+            already_subscribed = entry.subscribe(client)
+
+        return already_subscribed
     
+    def publish(self, fields: list[str], client: ClientSocketWrapper) -> bool:
+        """Publish to a topic
+
+        Args:
+            fields (list[str]): request fields
+            client (ClientSocketWrapper): client socket
+
+        Returns:
+            bool: if the client already is subscribed
+        """
+        with self.nt_lock:
+            entry = self.NETWORK_TABLES.get_child(fields[0])
+
+            if not entry:
+                add_entry(fields[0], EntryType(int(fields[1])), bytes(fields[2]))
+                entry = self.NETWORK_TABLES.get_child(fields[0])
+            else:
+                entry.publish(EntryType(int(fields[1])), bytes(fields[2], "utf-8"))
+
     @staticmethod
     def generate_keys():
         """Generate RSA keys"""

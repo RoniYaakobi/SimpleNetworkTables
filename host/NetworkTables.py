@@ -1,6 +1,6 @@
 from host.Entry import Entry, EntryType
 
-HEAD : Entry = Entry(EntryType.PLACEHOLDER, 0x00)
+HEAD : Entry = Entry.create_null()
 
 def generate_path(topic: str):
     """Util to split the path to edge"""
@@ -11,27 +11,16 @@ def add_entry(topic: str, type: EntryType, value: bytes):
     path = generate_path(topic)
     curr = HEAD
 
-    for edge in path[:-1]:
+    for idx,edge in enumerate(path[:-1]):
         node = curr.get_child(edge)
         if node is None:
-            node = Entry(EntryType.PLACEHOLDER, 0x00)
+            node = Entry.create_null("/".join(path[:idx + 1]))
             curr.add_child(edge, node)
         curr = node
 
     node = curr.get_child(path[-1])
     if node is None:
-        node = Entry(type, value)
+        node = Entry(topic, type, value)
         curr.add_child(path[-1], node)
     else:
         node.value_bytes = value
-
-
-
-
-if __name__ == "__main__":
-    while True:
-        topic = input()
-        value = input()
-        
-        add_entry(topic, EntryType.STRING, value.encode())
-        HEAD.print_all()
