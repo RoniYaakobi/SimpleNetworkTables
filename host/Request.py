@@ -31,6 +31,9 @@ class Request:
 
         if type(errors_returned) is bool:
             errors_returned = (errors_returned,)
+        
+        if errors_returned is None:
+            errors_returned = []
 
         if len(errors_returned) != len(self.errors):
             logging.error(f"{'More' if len(errors_returned) > len(self.errors) else 'Less'} flags returned by function than got errors.")

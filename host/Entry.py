@@ -45,6 +45,10 @@ class Entry:
         """The entry type"""
         return self._type
     
+    @type.setter
+    def type(self, value):
+        self._type = value
+    
     @property
     def value_bytes(self) -> bytes:
         """The bytes of the entry's value"""
@@ -88,6 +92,7 @@ class Entry:
         """Print all the children and the current node"""
         subs = list(self.__subscribers.values())
         print(path ,self._type, self._value_bytes)
+        print([sub.updated for sub in subs])
 
         for key, child in self._children.items():
             child.print_all(path + "/" + key)
@@ -123,11 +128,6 @@ class Entry:
             list[Entry]: A list of entries
         """
 
-        if self.type is EntryType.INT_64:
-            self.value_bytes = ((int.from_bytes(self.value_bytes) + 1) % 256).to_bytes()
-            for subscriber in self.__subscribers.values():
-                subscriber.updated = False
-
         is_subscribed = (client in self.__subscribers) or __child_of_subscribed
 
         needs_update = is_subscribed and not self.__subscribers.get(client).updated
@@ -144,3 +144,14 @@ class Entry:
     def subscriber_updated(self, client):
         """ Mark client as updated """
         self.__subscribers.get(client).updated = True
+
+    def publish(self, entry_type : EntryType, new_value: bytes):
+        self.type = entry_type
+        self.value_bytes = new_value
+
+        self.mark_all_as_outdated()
+    
+
+    def mark_all_as_outdated(self):
+        for subscriber in self.__subscribers.values():
+            subscriber.updated = False

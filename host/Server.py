@@ -99,6 +99,10 @@ class Server:
             ProtocolError.ALREADY_SUBSCRIBED
         ])
 
+        self.business_logic_requests[ProtocolCode.PUBLISH] = \
+        Request(self.publish, ProtocolCode.PUBLISH, [
+        ])
+
         while True:
             client,_ = self.server.accept()
             client = ClientSocketWrapper(client)
@@ -427,6 +431,25 @@ class Server:
 
         return already_subscribed
     
+    def publish(self, fields: list[str], client: ClientSocketWrapper) -> bool:
+        """Publish to a topic
+
+        Args:
+            fields (list[str]): request fields
+            client (ClientSocketWrapper): client socket
+
+        Returns:
+            bool: if the client already is subscribed
+        """
+        with self.nt_lock:
+            entry = self.NETWORK_TABLES.get_child(fields[0])
+
+            if not entry:
+                add_entry(fields[0], EntryType(int(fields[1])), bytes(fields[2]))
+                entry = self.NETWORK_TABLES.get_child(fields[0])
+            else:
+                entry.publish(EntryType(int(fields[1])), bytes(fields[2], "utf-8"))
+
     @staticmethod
     def generate_keys():
         """Generate RSA keys"""
