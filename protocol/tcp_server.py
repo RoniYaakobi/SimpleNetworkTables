@@ -15,7 +15,7 @@ class ClientSocketWrapper:
     def __init__(self, sock):
         self.sock = sock
         self.aes_key = None
-        self._username = ""
+        self._username = "Guest"
         self.__authenticated = False
 
 

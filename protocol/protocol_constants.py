@@ -49,6 +49,7 @@ class ProtocolError(Enum):
     USER_ALREADY_VALID = 6
     INVALID_TYPE = 7
     BAD_DATA = 8
+    ALREADY_SUBSCRIBED = 9
 
 
 @unique
