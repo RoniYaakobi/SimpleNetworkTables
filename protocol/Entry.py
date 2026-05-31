@@ -15,6 +15,34 @@ class EntryType(Enum):
     ARRAY_FLOAT_64 = 6 
     ARRAY_BOOLEAN = 7
 
+    @staticmethod
+    def format(type: EntryType, value_bytes: bytes):
+        match (type):
+            case EntryType.PLACEHOLDER:
+                return "null"
+            case EntryType.BOOLEAN:
+                print(int(value_bytes.decode(), 16))
+                return "true" if int(value_bytes.decode(), 16) > 0 else "false"
+            case EntryType.INT_64:
+                return str(int(value_bytes.decode(), 16))
+            case EntryType.STRING:
+                return hex_str_to_bytes(value_bytes.decode("utf-8"))
+            case _:
+                return "null"
+
+
+def hex_str_to_bytes(string):
+    total = 0
+    for c in string:
+        total = total * 16 + int(c ,16)
+    
+    new_str = ""
+    while total != 0:
+        new_str += chr(total % 256)
+        total //= 256
+
+    return new_str[::-1]
+
 class _Subscriber:
     """Stores in an object the client and whether or not it is updated"""
     def __init__(self, client):
@@ -57,7 +85,7 @@ class Entry:
     @value_bytes.setter
     def value_bytes(self, value_bytes: bytes):
 
-        self._value_bytes = value_bytes
+        self._value_bytes = value_bytes[2:-1]
 
     def get_child(self, topic: str) -> Optional[Entry]:
         """Get the child entry at this topic"""
@@ -148,6 +176,8 @@ class Entry:
     def publish(self, entry_type : EntryType, new_value: bytes):
         self.type = entry_type
         self.value_bytes = new_value
+
+        print(self.__topic + " -> " + str(self.value_bytes))
 
         self.mark_all_as_outdated()
     

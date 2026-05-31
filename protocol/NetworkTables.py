@@ -1,4 +1,4 @@
-from host.Entry import Entry, EntryType
+from protocol.Entry import Entry, EntryType
 
 HEAD : Entry = Entry.create_null()
 

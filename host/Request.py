@@ -6,15 +6,23 @@ import logging
 class Request:
     """A client request abstracted into a class
     """
-    def __init__(self, callback: Callable, code: str, errors: list[str]):
+    def __init__(self, callback: Callable, code: str | ProtocolCode, errors: list[str]):
         """
         Args:
             callback (Callable): the callback for the behavior of the request
-            code (str): the code of the request
+            code (str | ProtocolCode): the code of the request
             errors (list[str]): the possible error messages of the Request
         """
         self.callback = callback
-        self.code = code
+
+        if type(code) is ProtocolCode:
+            self.code = code.value
+        elif type(code) is str:
+            self.code = code
+        else:
+            print("bruh")
+            raise Exception("bruh")
+        
         self.errors = errors
 
 

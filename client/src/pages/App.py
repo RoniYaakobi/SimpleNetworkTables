@@ -25,7 +25,7 @@ class App(tk.Tk, ControllerInterface):
         self.current_page = None
 
         self.title("Messenger")
-        self.geometry("400x300")
+        self.geometry("800x600")
 
         container = tk.Frame(self)
         container.pack(fill="both", expand=True)
