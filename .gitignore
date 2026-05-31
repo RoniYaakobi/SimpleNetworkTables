@@ -2,3 +2,7 @@
 host/__pycache__/
 
 *.pyc
+
+.idea/
+
+*.pkl

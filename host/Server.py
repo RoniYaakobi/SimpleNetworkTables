@@ -16,8 +16,8 @@ from host.server_constants import ServerConstants
 from host.Database import DataBase
 from host.send_email import send_email
 
-from host.NetworkTables import HEAD, add_entry
-from host.Entry import EntryType
+from protocol.NetworkTables import HEAD, add_entry
+from protocol.Entry import EntryType
 
 class Server:
     def __init__(self):
@@ -176,7 +176,6 @@ class Server:
                     break
             
             entries = self.NETWORK_TABLES.get_topics_for_client_update(client)
-
         
             if len(entries) == 0:
                 continue
@@ -190,6 +189,7 @@ class Server:
             args_str = TcpSocket.FIELD_DELIMETER.join(args)
 
             client.send_with_size(ProtocolCode.UPDATE.value + args_str)
+
 
             
 

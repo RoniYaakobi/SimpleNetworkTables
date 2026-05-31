@@ -7,6 +7,8 @@ from protocol.protocol_constants import ProtocolCode
 
 from client.lib.pages.ControllerInterface import ControllerInterface
 
+from ..pages.DashboardPage import DashboardPage
+
 
 
 class LoginCommand(Command):
@@ -49,7 +51,7 @@ class LoginCommand(Command):
         if not interrupted:
             messagebox.showinfo("Login", f"Connected to username: {self.username}")
             
-            self.controller.goto(0)
+            self.controller.goto(DashboardPage.PAGE_ID)
         elif self.has_errors:
             messagebox.showerror("Login", f"Incorrect username or password!")
         else:
