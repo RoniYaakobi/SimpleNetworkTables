@@ -7,6 +7,7 @@ from enum import StrEnum
 
 from protocol.tcp_client import TcpClient
 from protocol.protocol_constants import ProtocolCode, EncryptionType
+from protocol.Entry import EntryType
 
 from .BackendConstants import BackendConstants
 
@@ -21,9 +22,15 @@ class ErrorMessage(Message):
     """ An error message from the server """
     handled: bool = False
 
+@dataclass
+class Entry:
+    """ Network tables entry record from the server """
+    entry_type: EntryType
+    value_bytes: bytes
+
 class ConnectionStatus(StrEnum):
-    Disconnected = 'Disconnected'
-    Connecting = 'Connecting'
+    Disconnected = "Disconnected"
+    Connecting = "Connecting"
     Connected = "Connected"
 
 
@@ -38,6 +45,7 @@ class AppBackend:
         self.lock = threading.Lock()
 
         self.connection_status = ConnectionStatus.Disconnected
+        self.network_tables = dict()
 
         self.encryption_type = None
 
@@ -87,6 +95,10 @@ class AppBackend:
     
     def reset_code(self):
         self.code = None
+
+    def get_topic(self, topic):
+        print(self.network_tables)
+        return self.network_tables.get(topic)
 
     def connect(self):
         """ Try opening a secure session with the server. If succeeded, initialize async communication. """
@@ -218,34 +230,62 @@ class AppBackend:
             print(e)
             return False
 
+    def subscribe(self, topic : str):
+        try:
+            self.socket.send_with_size(
+                self.socket.build_request(ProtocolCode.SUBSCRIBE, topic)
+            )
+
+            return True
+        except Exception as e:
+            print(e)
+            return False
+        
+    def publish(self, topic : str, entry_type: EntryType, value_bytes: bytes):
+        try:
+            self.socket.send_with_size(
+                self.socket.build_request(ProtocolCode.PUBLISH, topic, str(entry_type.value), str(value_bytes))
+            )
+
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
     def _update(self):
         """ Forever, get a message and then store it based on if it is an error or a normal response """
         while True:
             message = self.socket.recv_by_size()
             code, fields = self.socket.deconstruct_response(message)
+
+            print(code)
+
+            if ProtocolCode(code) is ProtocolCode.UPDATE:
+                self.network_tables[fields[0]] = Entry(EntryType(int(fields[1])), bytes(fields[2][2:-1], "utf-8"))
+                continue
                 
             with self.lock:
                 self.messages.append(Message(code,fields))
-                if code == ProtocolCode.ERROR:
+                if ProtocolCode(code) is ProtocolCode.ERROR:
                     self.errors.append(ErrorMessage(fields[0],fields[1:]))
                    
 
-    def get_messages_of_type(self, code: str) -> tuple[list[Message], list[ErrorMessage]]:
+    def get_messages_of_type(self, code: ProtocolCode) -> tuple[list[Message], list[ErrorMessage]]:
         """Equivalent to SELECT * WHERE code == {code}
 
         Args:
-            code (str): the message code which you need
+            code (ProtocolCode): the message code which you need
 
         Returns:
             tuple[list[Message], list[ErrorMessage]]: a list of those messages, and their respective error messages.
         """
-        
+
         code_responses = []
         error_messages = []
 
         with self.lock:
             for index, message in enumerate(self.messages):
-                if message.code == code:
+                if ProtocolCode(message.code) is code:
                     code_responses.append(message)
 
                     self.messages.pop(index)
@@ -254,13 +294,14 @@ class AppBackend:
 
             remove_indices = []
             for index,error in enumerate(self.errors):
-                if error.code == code:
+                if ProtocolCode(error.code) is code:
                     error_messages.append(error)
 
                     remove_indices.append(index)
 
             for i in remove_indices[::-1]:
                 self.errors.pop(i)
+
 
 
         return code_responses, error_messages
