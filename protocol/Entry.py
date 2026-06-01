@@ -116,6 +116,20 @@ class Entry:
             return False
         return True
 
+    def unsubscribe(self, client: ClientSocketWrapper):
+        """Subscribe to a given entry
+
+        Args:
+            client (ClientSocketWrapper): I really don't care as long as it can send stuff
+        """
+
+        if client in self.__subscribers.keys():
+            del self.__subscribers[client]
+
+        for child in self._children.values():
+            child.unsubscribe(client)
+
+
     def print_all(self, path=""):
         """Print all the children and the current node"""
         subs = list(self.__subscribers.values())
