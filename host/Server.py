@@ -136,6 +136,8 @@ class Server:
         update_client.join()
         business_logic.join()
 
+        self.NETWORK_TABLES.unsubscribe(client)
+
         del self.clients_to_threads[client]
 
 
@@ -188,7 +190,11 @@ class Server:
             
             args_str = TcpSocket.FIELD_DELIMETER.join(args)
 
-            client.send_with_size(ProtocolCode.UPDATE.value + args_str)
+            try:
+                client.send_with_size(ProtocolCode.UPDATE.value + args_str)
+            except ConnectionResetError:
+                self.clients_to_threads[client][0] = True
+                break
 
 
             
