@@ -4,6 +4,7 @@ from enum import Enum
 from dataclasses import dataclass
 from protocol.tcp_server import ClientSocketWrapper
 
+
 class EntryType(Enum):
     PLACEHOLDER = -1
     BOOLEAN = 0

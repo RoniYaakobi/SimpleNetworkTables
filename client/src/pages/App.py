@@ -24,7 +24,7 @@ class App(tk.Tk, ControllerInterface):
 
         self.current_page = None
 
-        self.title("Messenger")
+        self.title("Network Tables client")
         self.geometry("800x600")
 
         container = tk.Frame(self)
