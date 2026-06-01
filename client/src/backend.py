@@ -10,6 +10,9 @@ from protocol.protocol_constants import ProtocolCode, EncryptionType
 from protocol.Entry import EntryType
 
 from .BackendConstants import BackendConstants
+from collections import deque
+
+import time
 
 @dataclass 
 class Message:
@@ -27,6 +30,8 @@ class Entry:
     """ Network tables entry record from the server """
     entry_type: EntryType
     value_bytes: bytes
+    timestamps: list[float]
+    values:  list[tuple[bytes]]
 
 class ConnectionStatus(StrEnum):
     Disconnected = "Disconnected"
@@ -261,7 +266,17 @@ class AppBackend:
             print(code)
 
             if ProtocolCode(code) is ProtocolCode.UPDATE:
-                self.network_tables[fields[0]] = Entry(EntryType(int(fields[1])), bytes(fields[2][2:-1], "utf-8"))
+                curr_bytes = bytes(fields[2][2:-1], "utf-8")
+                print(curr_bytes)
+                curr_type = EntryType(int(fields[1]))
+                if not self.network_tables.get(fields[0]):
+                    self.network_tables[fields[0]] = Entry(curr_type, curr_bytes, [time.monotonic()], [curr_bytes])
+                else:
+                    entry = self.network_tables.get(fields[0])
+                    entry.timestamps.append(time.monotonic())
+                    entry.values.append((curr_bytes,curr_type))
+                    entry.entry_type = curr_type
+                    entry.value_bytes = curr_bytes
                 continue
                 
             with self.lock:
