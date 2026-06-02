@@ -22,10 +22,9 @@ class EntryType(Enum):
             case EntryType.PLACEHOLDER:
                 return "null"
             case EntryType.BOOLEAN:
-                print(int(value_bytes.decode(), 16))
                 return "true" if int(value_bytes.decode(), 16) > 0 else "false"
             case EntryType.INT_64:
-                return str(int(value_bytes.decode(), 16))
+                return bytes_to_int(value_bytes)
             case EntryType.STRING:
                 return hex_str_to_bytes(value_bytes.decode("utf-8"))
             case _:
@@ -43,6 +42,13 @@ def hex_str_to_bytes(string):
         total //= 256
 
     return new_str[::-1]
+
+def bytes_to_int(bytes):
+    num = 0
+    for byte in bytes:
+        num = num * 16 + int(chr(byte), 16)
+
+    return num
 
 class _Subscriber:
     """Stores in an object the client and whether or not it is updated"""

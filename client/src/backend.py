@@ -31,7 +31,7 @@ class Entry:
     entry_type: EntryType
     value_bytes: bytes
     timestamps: list[float]
-    values:  list[tuple[bytes]]
+    values_int:  list[bytes]
 
 class ConnectionStatus(StrEnum):
     Disconnected = "Disconnected"
@@ -102,7 +102,6 @@ class AppBackend:
         self.code = None
 
     def get_topic(self, topic):
-        print(self.network_tables)
         return self.network_tables.get(topic)
 
     def connect(self):
@@ -263,18 +262,19 @@ class AppBackend:
             message = self.socket.recv_by_size()
             code, fields = self.socket.deconstruct_response(message)
 
-            print(code)
 
             if ProtocolCode(code) is ProtocolCode.UPDATE:
                 curr_bytes = bytes(fields[2][2:-1], "utf-8")
-                print(curr_bytes)
                 curr_type = EntryType(int(fields[1]))
                 if not self.network_tables.get(fields[0]):
-                    self.network_tables[fields[0]] = Entry(curr_type, curr_bytes, [time.monotonic()], [curr_bytes])
+                    self.network_tables[fields[0]] = Entry(curr_type, curr_bytes, 
+                                                           [time.monotonic() / 1000] if curr_type is EntryType.INT_64 else [],
+                                                            [curr_bytes]if curr_type is EntryType.INT_64 else [])
                 else:
                     entry = self.network_tables.get(fields[0])
-                    entry.timestamps.append(time.monotonic())
-                    entry.values.append((curr_bytes,curr_type))
+                    if curr_type is EntryType.INT_64:
+                        entry.timestamps.append(time.monotonic() / 1000)
+                        entry.values_int.append(curr_bytes)
                     entry.entry_type = curr_type
                     entry.value_bytes = curr_bytes
                 continue

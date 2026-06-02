@@ -2,12 +2,13 @@ __author__ = "RONI YAAKOBI"
 from client.lib.pages import Page, PageType, ControllerInterface
 from tkinter import Frame
 
-from math import log
+from threading import Thread, Lock
 
 from client.src.commands.SubscribeCommand import SubscribeCommand
 from client.src.commands.PublishCommand import PublishCommand
 
 from protocol.Entry import EntryType
+from client.src.GraphCanva import Graph, initialize as intialize_graphing, run as run_graphs
 
 
 class DashboardPage(Page):
@@ -47,6 +48,13 @@ class DashboardPage(Page):
 
         self.create_text_box("Topic:", self._update_inspection, lambda : self.inspect_result)
 
+        self.create_action_button("Graph (only integer)", self._turn_on_graph, pack_pady=5)
+
+        self.graph_data = []
+        self.graph_data_lock = Lock()
+        self.graph = None
+
+
     def _subscribe_action(self):
         """ Use the input username and password to attempt to login. """
         topic = self.subscribe_topic.get()
@@ -68,8 +76,30 @@ class DashboardPage(Page):
 
         self.inspect_result = EntryType.format(inspect_result.entry_type, inspect_result.value_bytes)
 
-        print(f"'{self.inspect_result}'")
+
     
     def _update_inspection(self):
-        pass
+        inspect_result = self.backend().get_topic(self.inspect_target.get())
+
+        if not(inspect_result):
+            return
+
+        values = [EntryType.format(EntryType.INT_64, bytes) for bytes in inspect_result.values_int]
+
+        with self.graph_data_lock:
+            self.graph_data = list(zip(inspect_result.timestamps, values))
+            if self.graph:
+                self.graph.data_points = self.graph_data
+
+    def _turn_on_graph(self):
+        self.graph_thread = Thread(target=self.start_graph, daemon=True)
+        self.graph_thread.start()
+
+        self.graph_thread.join()
+
+    def start_graph(self):
+        intialize_graphing()
+        with self.graph_data_lock:
+            self.graph = Graph("Data", self.graph_data, self.graph_data_lock)
+        run_graphs()
         

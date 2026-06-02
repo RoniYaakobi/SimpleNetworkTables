@@ -14,6 +14,7 @@ __running = False
 _screen = None
 
 def initialize():
+    """ Initialize the module """
     global _screen, __running, CLOCK, _graphs
     _graphs = []
     pygame.init()
@@ -22,12 +23,14 @@ def initialize():
     __running = True
 
 def quit():
+    """ Quit pygame """
     global _screen, __running, CLOCK
     __running = False
     pygame.quit()
 
 
 def run():
+    """ Run the main loop """
     global _screen, __running, CLOCK, _graphs
     while __running:
         for event in pygame.event.get():
@@ -41,7 +44,7 @@ def run():
         CLOCK.tick(60)
 
 class TextLabel:
-    def __init__(self, text, font, color = WHITE):
+    def __init__(self, text: str, font: pygame.font.Font, color: tuple[int,int,int] = WHITE):
         self.font = font
         self.color = color
         self.text = text
@@ -55,24 +58,42 @@ class TextLabel:
         self.surface = self.font.render(self.text, True, self.color)
         self.rect = self.surface.get_rect()
 
-    def set_text(self, text):
-        """Update text content."""
+    def set_text(self, text: str):
+        """
+        Args:
+            text (str): new text
+        """
         self.text = text
         self._render()
 
-    def set_color(self, color):
-        """Change text color."""
+    def set_color(self, color: tuple[int, int, int]):
+        """
+        Args:
+            color (tuple[int, int, int]): the new text color
+        """
         self.color = color
         self._render()
 
-    def draw_midtop(self, surface, x, y):
-        """Draw text with top-center anchored at (x, y)."""
+    def draw_midtop(self, surface: pygame.surface.Surface, x: int, y: int):
+        """ Draw with the midtop of the text at a set of coords
+
+        Args:
+            surface (pygame.surface.Surface): the surface to draw on
+            x (int): x coordinate on the screen
+            y (int): y coordinate on the screen
+        """
         self.rect = self.surface.get_rect()
         self.rect.midtop = (x, y + 10)
         surface.blit(self.surface, self.rect)
 
-    def draw_midright(self, surface, x, y):
-        """Draw text with top-center anchored at (x, y)."""
+    def draw_midright(self, surface: pygame.surface.Surface, x: int, y: int):
+        """Draw with the midright of the text at a set of coords
+
+        Args:
+            surface (pygame.surface.Surface): the surface to draw on
+            x (int): x coordinate on the screen
+            y (int): y coordinate on the screen
+        """
         self.rect = self.surface.get_rect()
         self.rect.midright = (x - 5, y + 5)
         surface.blit(self.surface, self.rect)
@@ -82,6 +103,7 @@ class Graph:
     TICK_SIZE = 30
     def __init__(self,title: str, 
                     data_points : list[tuple[float, float | int]],
+                    data_lock: Lock,
                     size_x : int = WINDOW_WIDTH - 4*GRAPH_OFFSET,
                     size_y: int = WINDOW_HEIGHT - 2*GRAPH_OFFSET, 
                     tick_interval: int = 10):
@@ -106,23 +128,23 @@ class Graph:
         self.display = pygame.surface.Surface((self.SIZE_X + 2*Graph.TICK_SIZE, self.SIZE_Y + 1.5*Graph.TICK_SIZE))
         self.title = TextLabel(title, pygame.font.Font(None, 40))
 
-        self.__data_points = data_points
-        self.__data_points_lock = Lock()
+        self.data_points = data_points
+        self.data_points_lock = data_lock
 
         self.CLOSED_DRAW = False
 
         _graphs.append(self)
 
-    @property
-    def data_points(self):
-        return self.__data_points
-    
-    @data_points.setter
-    def data_points(self, value):
-        with self.__data_points_lock:
-            self.__data_points = value
 
-    def fit_x_to_graph(self, x: float):
+    def fit_x_to_graph(self, x: float) -> float:
+        """ Translate the x coordinate to the graph
+
+        Args:
+            x (float): the x coordinate
+
+        Returns:
+            float: the translated x coordinate
+        """
         return x + 2*Graph.TICK_SIZE
     
     def fit_y_to_graph(self, y: float):
@@ -135,19 +157,19 @@ class Graph:
         return (point[0] - self.x_min) * self.x_scale, (point[1] - self.y_min) * self.y_scale
 
     def draw_lines(self):
-        with self.__data_points_lock:
-            scaled_points = [self.scale_point(point) for point in self.__data_points]
+        with self.data_points_lock:
+            scaled_points = [self.scale_point(point) for point in self.data_points]
 
         points_fitted = [self.fit_point_to_graph(point) for point in scaled_points]
 
         pygame.draw.lines(self.display, WHITE, self.CLOSED_DRAW, points_fitted, 3)
 
     def draw_axis(self):
-        self.x_min = self.__data_points[0][0]
-        x_max = self.__data_points[-1][0]
+        self.x_min = self.data_points[0][0]
+        x_max = self.data_points[-1][0]
 
-        self.y_min = y_max = self.__data_points[-1][1]
-        for _, value in self.__data_points:
+        self.y_min = y_max = self.data_points[-1][1]
+        for _, value in self.data_points:
             y_max = max(y_max, value)
             self.y_min = min(self.y_min, value)
 
