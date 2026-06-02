@@ -5,6 +5,10 @@ from dataclasses import dataclass
 from protocol.tcp_server import ClientSocketWrapper
 
 
+def generate_path(topic: str):
+    """Util to split the path to edge"""
+    return topic.strip().split("/")
+
 class EntryType(Enum):
     PLACEHOLDER = -1
     BOOLEAN = 0
@@ -96,7 +100,23 @@ class Entry:
 
     def get_child(self, topic: str) -> Optional[Entry]:
         """Get the child entry at this topic"""
-        return self._children.get(topic)
+
+        if not "/" in topic:
+            return self._children.get(topic)
+
+        path = generate_path(topic)
+
+        curr = self
+
+        for idx,edge in enumerate(path[:-1]):
+            node = curr.get_child(edge)
+            if node is None:
+                node = Entry.create_null("/".join(path[:idx + 1]))
+                curr.add_child(edge, node)
+            curr = node
+
+        node = curr.get_child(path[-1])
+        return node
     
     def add_child(self, topic: str, entry: Entry) -> bool:
         """Add a child entry of a topic, if it doesn't already exist, to this table"""

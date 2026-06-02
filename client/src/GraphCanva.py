@@ -202,7 +202,12 @@ class Graph:
 
     def draw(self):
         self.display.fill("black")
-        self.draw_axis()
+        try:
+            self.draw_axis()
+        except ZeroDivisionError:
+            print("Two points needed for a graph")
+            return
+        
         self.draw_lines()
         self.title.draw_midtop(_screen, WINDOW_WIDTH // 2, 0)
         _screen.blit(self.display, (GRAPH_OFFSET, GRAPH_OFFSET))
