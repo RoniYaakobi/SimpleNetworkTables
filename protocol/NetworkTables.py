@@ -1,10 +1,6 @@
-from protocol.Entry import Entry, EntryType
+from protocol.Entry import Entry, EntryType, generate_path
 
 HEAD : Entry = Entry.create_null()
-
-def generate_path(topic: str):
-    """Util to split the path to edge"""
-    return topic.strip().split("/")
 
 def add_entry(topic: str, type: EntryType, value: bytes):
     """Add an entry to the NT"""
