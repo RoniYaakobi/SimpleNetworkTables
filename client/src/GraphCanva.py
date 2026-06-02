@@ -1,3 +1,4 @@
+__author__ = "RONI YAAKOBI"
 import pygame
 from threading import Lock
 
