@@ -42,7 +42,7 @@ class SubscribeCommand(Command):
 
     def end(self, interrupted):
         if not interrupted:
-            messagebox.showinfo("Subscribe", f"Subscribe to {self.topic}")
+            return
         elif self.has_errors:
             messagebox.showerror("Subscribe", f"The server disagreed!")
         else:

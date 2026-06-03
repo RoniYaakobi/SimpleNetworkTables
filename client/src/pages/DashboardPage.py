@@ -95,8 +95,6 @@ class DashboardPage(Page):
         self.graph_thread = Thread(target=self.start_graph, daemon=True)
         self.graph_thread.start()
 
-        self.graph_thread.join()
-
     def start_graph(self):
         intialize_graphing()
         with self.graph_data_lock:

@@ -45,7 +45,7 @@ class PublishCommand(Command):
 
     def end(self, interrupted):
         if not interrupted:
-            messagebox.showinfo("Publish", f"Published to {self.topic}")
+            return
         elif self.has_errors:
             messagebox.showerror("Publish", f"The server disagreed!")
         else:
